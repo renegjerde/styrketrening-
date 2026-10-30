@@ -26,4 +26,4 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Ingen brukerinnlogging eller skytjeneste.
 - Rekkefølgeendring er støttet i nettlesere med drag-and-drop; mobil dra-og-slipp kan variere.
 - Dette er en grunnversjon. Vi kan bygge videre på tilpasning av øvelser, redigering av muskelgrupper, grafer og mer detaljert historikk.
-\n\n### v1.5\n- Siste økt på oversikten hentes fra nyeste treningsdato, uavhengig av registreringsrekkefølge.\n- Belastning vises og brukes per øvelse ut fra den nyeste gjennomførte økten for den øvelsen. Etterregistrerte eldre økter overskriver ikke nyere belastninger.\n
+\n\n### v1.5\n- Siste økt på oversikten hentes fra nyeste treningsdato, uavhengig av registreringsrekkefølge.\n- Belastning vises og brukes per øvelse ut fra den nyeste gjennomførte økten for den øvelsen. Etterregistrerte eldre økter overskriver ikke nyere belastninger.\n\n\n### v1.6\n- Cache-busting version query strings for stylesheet and JavaScript assets to help Safari/GitHub Pages load the updated code.\n- Latest session and per-exercise load are based on workout date, not entry order.\n
