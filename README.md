@@ -34,3 +34,12 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Uses a simple Epley estimated-strength indicator from load and reps, aggregated across exercises assigned to each muscle group.
 - Displays an explicit insufficient-data state and progress/regression labels.
 - Color thresholds: >0% small, 4%+ good, 8%+ strongest; no change/regression stays neutral.
+
+
+## v2.0 — 3D anatomy viewer prototype
+
+- Adds a real Three.js / WebGL viewport using the Écorché open anatomy GLB (named anatomical meshes).
+- Supports touch/mouse orbit, pinch/scroll zoom, model layer toggle (muscles vs. skeleton), and mesh click name display.
+- Model asset is loaded from the upstream project at runtime; this initial prototype therefore requires internet access. Three.js modules are loaded from jsDelivr.
+- Écorché model attribution: Écorché (github.com/Charleeh/ecorche), CC BY-SA 4.0. Based on BodyParts3D, © The Database Center for Life Science, CC BY 4.0, and Z-Anatomy by Gauthier Kervyn, CC BY-SA 4.0. Model adaptations/derivatives shared must retain CC BY-SA 4.0.
+- This is a viewer prototype. Muscle progression coloring is not yet wired to individual mesh names; that mapping is the next integration stage.

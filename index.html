@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101827">
   <title>Styrkeloggen</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=1.9">
+  <link rel="stylesheet" href="styles.css?v=2.0">
 </head>
 <body>
   <div class="app-shell">
@@ -45,30 +45,11 @@
         <div class="view-head"><p class="eyebrow">UTVIKLING OVER TID</p></div><h2 class="page-title">Progresjon</h2>
         <div class="filter-row"><label for="muscleFilter">Muskelgruppe</label><select id="muscleFilter"><option value="Alle">Alle</option><option>Skuldre</option><option>Bryst</option><option>Rygg</option><option>Biceps</option><option>Triceps</option><option>Core</option><option>Bein</option><option>Sete</option></select></div>
         <div class="summary-grid progress-summary"><div class="summary-card"><span class="metric" id="progressWorkouts">0</span><span class="metric-label">økter</span></div><div class="summary-card"><span class="metric" id="progressVolume">0</span><span class="metric-label">kg totalt</span></div></div>
-        <div class="muscle-progress-panel"><p class="eyebrow">SISTE 10 ØKTER</p><h3>Muskelgruppenes progresjon</h3><p class="muted">Sammenligner estimert styrkeutvikling i samme øvelse fra første til siste registrering blant de siste 10 øktene. Dette er en treningsindikator – ikke en direkte måling av muskelvekst.</p><div class="body-map-wrap">
-          <div class="body-map" id="bodyMuscleMap">
-            <div class="body-view"><p>FORFRA</p><svg viewBox="0 0 180 340" role="img" aria-label="Muskelkart forfra">
-              <circle cx="90" cy="24" r="19" class="body-base"/>
-              <path class="body-base" d="M72 47 Q52 48 43 67 L30 117 45 124 59 85 61 145 50 190 62 198 78 151 85 205 75 267 88 278 97 211 103 211 112 278 125 267 115 205 122 151 138 198 150 190 139 145 141 85 155 124 170 117 157 67 Q148 48 108 47Z"/>
-              <path data-muscle="Bryst" d="M62 66 Q75 54 88 69 L87 97 Q72 103 61 87Z M92 69 Q105 54 118 66 L119 87 Q108 103 93 97Z"/>
-              <path data-muscle="Skuldre" d="M44 66 Q54 49 69 54 L65 82 53 91 42 84Z M111 54 Q126 49 136 66 L138 84 127 91 115 82Z"/>
-              <path data-muscle="Biceps" d="M48 94 L60 88 55 126 45 122Z M120 88 L132 94 135 122 125 126Z"/>
-              <path data-muscle="Core" d="M72 101 L88 100 87 145 72 145Z M92 100 L108 101 108 145 93 145Z"/>
-              <path data-muscle="Bein" d="M64 151 L86 151 81 207 75 257 62 257 67 205Z M94 151 L116 151 113 205 118 257 105 257 99 207Z"/>
-              <path data-muscle="Sete" d="M62 145 Q77 140 89 151 L86 178 67 178Z M91 151 Q103 140 118 145 L113 178 94 178Z"/>
-            </svg></div>
-            <div class="body-view"><p>BAK</p><svg viewBox="0 0 180 340" role="img" aria-label="Muskelkart bakfra">
-              <circle cx="90" cy="24" r="19" class="body-base"/>
-              <path class="body-base" d="M72 47 Q52 48 43 67 L30 117 45 124 59 85 61 145 50 190 62 198 78 151 85 205 75 267 88 278 97 211 103 211 112 278 125 267 115 205 122 151 138 198 150 190 139 145 141 85 155 124 170 117 157 67 Q148 48 108 47Z"/>
-              <path data-muscle="Rygg" d="M62 65 Q75 53 88 70 L87 143 72 147 62 106Z M92 70 Q105 53 118 65 L118 106 108 147 93 143Z"/>
-              <path data-muscle="Biceps" d="M48 94 L60 88 55 126 45 122Z M120 88 L132 94 135 122 125 126Z"/>
-              <path data-muscle="Skuldre" d="M44 66 Q54 49 69 54 L65 82 53 91 42 84Z M111 54 Q126 49 136 66 L138 84 127 91 115 82Z"/>
-              <path data-muscle="Bein" d="M64 151 L86 151 81 207 75 257 62 257 67 205Z M94 151 L116 151 113 205 118 257 105 257 99 207Z"/>
-              <path data-muscle="Sete" d="M62 145 Q77 140 89 151 L86 178 67 178Z M91 151 Q103 140 118 145 L113 178 94 178Z"/>
-            </svg></div>
-          </div>
-          <div class="muscle-map-legend"><span><i class="legend-dot" style="background:#3a465e"></i>Lite / ingen</span><span><i class="legend-dot" style="background:#94b7c5"></i>Moderat</span><span><i class="legend-dot" style="background:#c8f169"></i>God</span><span><i class="legend-dot" style="background:#f5a65b"></i>Størst</span></div>
-          <p class="muted map-note">Fargene viser endring i estimert styrke: nøytral = ingen/negativ endring, blå = liten, grønn = god, oransje = størst. Ikke en direkte måling av muskelvekst.</p>
+        <div class="muscle-progress-panel"><p class="eyebrow">SISTE 10 ØKTER</p><h3>Muskelgruppenes progresjon</h3><p class="muted">Sammenligner estimert styrkeutvikling i samme øvelse fra første til siste registrering blant de siste 10 øktene. Dette er en treningsindikator – ikke en direkte måling av muskelvekst.</p><div class="anatomy3d-panel">
+          <div class="anatomy3d-toolbar"><span class="eyebrow">INTERAKTIV 3D-MUSKULATUR</span><div class="anatomy3d-actions"><button id="anatomyMuscles" class="active">Muskler</button><button id="anatomyBoth">Muskler + skjelett</button></div></div>
+          <div id="anatomy3dViewport" class="anatomy3d-viewport"><div class="anatomy3d-loading" id="anatomy3dStatus">Laster 3D-modellen …</div></div>
+          <div class="anatomy3d-footer"><span>👆 Dra for å rotere · Knip for å zoome</span><span id="anatomySelected">Velg en muskel</span></div>
+          <p class="muted anatomy3d-note">Anatomimodell: Écorché · CC BY-SA 4.0 · Én voksen mannlig modell. Treningsprogresjon vises med fargekoder når kobling til muskelgrupper er aktivert.</p>
         </div>
         <div id="muscleProgressChart" class="muscle-progress-chart"></div></div>
         <div id="progressCards" class="progress-cards"></div>
@@ -87,6 +68,6 @@
     <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=1.9"></script>
+  <script src="app.js?v=2.0"></script><script type="module" src="anatomy3d.js?v=2.0"></script>
 </body>
 </html>
