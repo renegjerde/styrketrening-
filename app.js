@@ -158,7 +158,41 @@ function finishWorkout(){
   });
   saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
 }
+function renderMuscleProgressChart(){
+  const chart=document.getElementById("muscleProgressChart");
+  if(!chart)return;
+  const recent=chronologicalHistory().slice(-10);
+  const muscles=["Skuldre","Bryst","Rygg","Biceps","Triceps","Core","Bein","Sete"];
+  if(recent.length<2){
+    chart.innerHTML='<p class="muscle-progress-empty">Logg minst to økter for å vise relativ framgang på muskelkartet.</p>';
+    document.querySelectorAll("#bodyMuscleMap [data-muscle]").forEach(el=>el.classList.remove("muscle-moderate","muscle-good","muscle-top"));
+    return;
+  }
+  const early=recent.slice(0,Math.min(3,recent.length));
+  const late=recent.slice(-Math.min(3,recent.length));
+  const vals=muscles.map(m=>{
+    const collect=ws=>ws.flatMap(w=>(w.exercises||[]).filter(entry=>{
+      const ex=exercises.find(x=>x.id===entry.id);return ex&&ex.muscles.includes(m);
+    }).flatMap(entry=>(entry.sets||[]).map(s=>({load:Number(s.load)||0,reps:Number(s.reps)||0}))));
+    const x=collect(early),y=collect(late);
+    if(!x.length||!y.length)return {muscle:m,change:null};
+    const mean=a=>a.reduce((sum,v)=>sum+v.load*(1+Math.min(v.reps,20)/100),0)/a.length;
+    const baseline=mean(x),current=mean(y);
+    return {muscle:m,change:baseline>0?((current-baseline)/baseline)*100:0};
+  });
+  const available=vals.filter(v=>v.change!==null);
+  if(!available.length){chart.innerHTML='<p class="muscle-progress-empty">Ikke nok loggede data til å sammenligne muskelgruppene ennå.</p>';return;}
+  const sorted=[...available].sort((a,b)=>a.change-b.change);
+  const low=sorted[0].change,high=sorted[sorted.length-1].change;
+  const rankFor=m=>{const v=available.find(x=>x.muscle===m);if(!v)return "";const span=high-low;const r=span===0?0.5:(v.change-low)/span;return r>=.75?"muscle-top":r>=.45?"muscle-good":r>=.2?"muscle-moderate":"";};
+  document.querySelectorAll("#bodyMuscleMap [data-muscle]").forEach(el=>{
+    el.classList.remove("muscle-moderate","muscle-good","muscle-top");
+    const cls=rankFor(el.dataset.muscle);if(cls)el.classList.add(cls);
+  });
+  chart.innerHTML=available.sort((a,b)=>b.change-a.change).map(v=>`<div class="muscle-progress-row"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${Math.max(0,Math.min(100,(v.change-low)/(Math.max(1,high-low))*100))}%"></div></div><span class="muscle-progress-value">${v.change>=0?"+":""}${v.change.toFixed(1)}%</span></div>`).join("");
+}
 function renderProgress(){
+  renderMuscleProgressChart();
   document.getElementById("progressWorkouts").textContent=history.length;
   document.getElementById("progressVolume").textContent=fmtNum(history.reduce((s,w)=>s+(w.volume||0),0));
   const filter=document.getElementById("muscleFilter").value;const box=document.getElementById("progressCards");box.innerHTML="";

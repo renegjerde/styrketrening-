@@ -26,3 +26,29 @@
 .recommendation-card .no-increase{color:#dce3ef}
 .hold-toggle{display:flex;align-items:center;gap:9px;font-size:12px;color:#a1adc2;margin:9px 0 5px}
 .hold-toggle input{accent-color:#c8f169;width:17px;height:17px}
+
+.muscle-progress-panel{margin:14px 0 18px;padding:16px;background:#1b2437;border:1px solid #303d54;border-radius:16px}
+.muscle-progress-panel h3{font-size:17px;margin:0 0 6px}
+.muscle-progress-panel .muted{font-size:11px;line-height:1.45;margin:0 0 14px}
+.muscle-progress-chart{display:flex;flex-direction:column;gap:12px}
+.muscle-progress-row{display:grid;grid-template-columns:82px minmax(0,1fr) 54px;gap:9px;align-items:center}
+.muscle-progress-label{font-size:12px;color:#e9edf5}
+.muscle-progress-track{height:10px;background:#303d54;border-radius:99px;overflow:hidden}
+.muscle-progress-bar{height:100%;background:#c8f169;border-radius:99px;min-width:2px}
+.muscle-progress-value{text-align:right;color:#c8f169;font-size:12px;font-weight:700}
+.muscle-progress-empty{font-size:12px;color:#a1adc2;line-height:1.5}
+
+.body-map-wrap{margin:16px 0 20px;padding:12px 8px 14px;background:#151d2d;border:1px solid #2e3a52;border-radius:16px}
+.body-map{display:flex;justify-content:center;gap:10px;align-items:flex-start}
+.body-view{flex:1;max-width:190px;text-align:center}
+.body-view p{font-size:10px;letter-spacing:1.8px;color:#98a5bb;font-weight:700;margin:4px 0 8px}
+.body-view svg{width:100%;max-height:310px;overflow:visible}
+.body-base{fill:#3a465e;stroke:#64728b;stroke-width:1.4}
+.body-view [data-muscle]{fill:#3a465e;stroke:#7c8ba5;stroke-width:1.2;transition:fill .2s}
+.body-view [data-muscle].muscle-moderate{fill:#94b7c5}
+.body-view [data-muscle].muscle-good{fill:#c8f169}
+.body-view [data-muscle].muscle-top{fill:#f5a65b}
+.muscle-map-legend{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;font-size:10px;color:#a1adc2;margin-top:8px}
+.muscle-map-legend span{display:flex;align-items:center;gap:4px}
+.legend-dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+.map-note{font-size:10px;text-align:center;margin:9px 5px 0}
