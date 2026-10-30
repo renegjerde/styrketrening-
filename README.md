@@ -8,7 +8,7 @@ En enkel, mobilvennlig treningslogg for det eksisterende maskinprogrammet.
 - Tre sett som standard, justerbart repetisjonsmål
 - 3 minutters pauseklokke som standard
 - Progresjonsråd ved mer enn målet i siste sett
-- Historikk, volumoversikt og progresjonskurve per øvelse
+- Historikk, volumoversikt og progresjonskurve per øvelse\n- Etterregistrering av økter med kalender/dato-felt (fremtidige datoer blokkeres)
 - Muskelgruppefilter
 - Flytt øvelser i dagens standardrekkefølge ved å trykke «Endre rekkefølge» og dra kortene
 - Lokal lagring i nettleseren og eksport av JSON-backup

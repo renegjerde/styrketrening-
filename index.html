@@ -95,6 +95,16 @@
       <section id="historyView" class="view">
         <p class="eyebrow">TIDLIGERE ØKTER</p>
         <h2 class="page-title">Historikk</h2>
+        <div class="backfill-card">
+          <div>
+            <p class="eyebrow">MANGLER EN ØKT?</p>
+            <h3>Etterregistrer trening</h3>
+            <p class="muted">Velg datoen du trente, og registrer økten som vanlig.</p>
+          </div>
+          <label class="date-label" for="backfillDate">Treningsdato</label>
+          <input id="backfillDate" type="date">
+          <button class="primary-button full" id="startBackfill">Registrer økt på valgt dato →</button>
+        </div>
         <div id="historyList" class="history-list"></div>
       </section>
 

@@ -40,8 +40,10 @@ function renderHome(){
   document.getElementById("editOrderBtn").textContent=orderEditing?"Ferdig":"Endre rekkefølge";
 }
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
-function startWorkout(){
-  session={date:new Date().toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,sets:Array.from({length:3},()=>({load:e.weight,reps:settings.targetReps,done:false}))}))};
+function startWorkout(chosenDate=null){
+  // A date selected from the calendar is saved as that workout's local calendar day.
+  const dateValue=chosenDate || new Date().toISOString().slice(0,10);
+  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,sets:Array.from({length:3},()=>({load:e.weight,reps:settings.targetReps,done:false}))}))};
   currentIndex=0;setView("workoutView");renderExercise();
 }
 function current(){return session.exercises[currentIndex];}
@@ -123,7 +125,13 @@ function saveSettings(){
 function exportData(){const blob=new Blob([JSON.stringify({settings,exercises,history},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="styrkeloggen-backup.json";a.click();URL.revokeObjectURL(url);}
 function resetData(){if(confirm("Dette sletter all historikk og tilbakestiller appen. Er du sikker?")){localStorage.removeItem(STORAGE_KEY);settings={targetReps:12,restSeconds:180,incrementKg:5};exercises=DEFAULT_EXERCISES.map(x=>({...x}));history=[];renderHome();renderProgress();renderHistory();showToast("Data er nullstilt.");}}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
-document.getElementById("startWorkoutBtn").addEventListener("click",startWorkout);
+document.getElementById("startWorkoutBtn").addEventListener("click",()=>startWorkout());
+document.getElementById("startBackfill").addEventListener("click",()=>{
+  const date=document.getElementById("backfillDate").value;
+  if(!date){showToast("Velg dato i kalenderen først.");return;}
+  if(date>new Date().toISOString().slice(0,10)){showToast("Du kan ikke etterregistrere en fremtidig økt.");return;}
+  startWorkout(date);
+});
 document.getElementById("backHome").addEventListener("click",()=>{if(confirm("Gå ut av økten? Økten blir ikke lagret før du avslutter.")){session=null;stopRest();setView("homeView");}});
 document.getElementById("loadDown").addEventListener("click",()=>changeLoad(-settings.incrementKg));
 document.getElementById("loadUp").addEventListener("click",()=>changeLoad(settings.incrementKg));
@@ -137,6 +145,8 @@ document.getElementById("saveSettings").addEventListener("click",saveSettings);
 document.getElementById("exportData").addEventListener("click",exportData);
 document.getElementById("resetData").addEventListener("click",resetData);
 loadData();
+document.getElementById("backfillDate").value=new Date().toISOString().slice(0,10);
+document.getElementById("backfillDate").max=new Date().toISOString().slice(0,10);
 document.getElementById("targetReps").value=settings.targetReps;
 document.getElementById("restSeconds").value=settings.restSeconds;
 document.getElementById("incrementKg").value=settings.incrementKg;
