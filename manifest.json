@@ -1,0 +1,9 @@
+{
+  "name": "Styrkeloggen",
+  "short_name": "Styrkeloggen",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#101827",
+  "theme_color": "#101827",
+  "description": "Treningslogg og progresjon for styrketrening."
+}
