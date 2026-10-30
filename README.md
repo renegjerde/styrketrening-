@@ -4,7 +4,7 @@ En enkel, mobilvennlig treningslogg for det eksisterende maskinprogrammet.
 
 ## Innhold
 - 7 maskinøvelser med oppgitte startvekter
-- Registrering av kilo og reps per sett
+- Registrering av kilo og reps per sett, med +/- piler for reps\n- Pågående økt lagres automatisk og kan gjenopptas etter at appen lukkes eller nettleseren lastes på nytt
 - Tre sett som standard, justerbart repetisjonsmål
 - 3 minutters pauseklokke som standard
 - Progresjonsråd ved mer enn målet i siste sett

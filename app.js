@@ -22,6 +22,8 @@ function loadData(){
   try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");if(d.settings)settings={...settings,...d.settings};if(d.exercises?.length)exercises=d.exercises;if(d.history)history=d.history;}catch(e){}
 }
 function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify({settings,exercises,history}));}
+function saveSession(){if(session){localStorage.setItem(STORAGE_KEY+"_session",JSON.stringify({session,currentIndex}));}else{localStorage.removeItem(STORAGE_KEY+"_session");}}
+function loadSession(){try{const raw=localStorage.getItem(STORAGE_KEY+"_session");if(!raw)return null;const d=JSON.parse(raw);return d?.session?d:null;}catch(e){return null;}}
 function fmtDate(date){return new Date(date).toLocaleDateString("nb-NO",{day:"numeric",month:"short",year:"numeric"});}
 function fmtNum(n){return Math.round(n).toLocaleString("nb-NO");}
 function showToast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2200);}
@@ -38,14 +40,17 @@ function renderHome(){
     list.appendChild(row);
   });
   document.getElementById("editOrderBtn").textContent=orderEditing?"Ferdig":"Endre rekkefølge";
+  document.getElementById("resumeWorkoutBtn").hidden=!session;
+  document.getElementById("startWorkoutBtn").hidden=!!session;
 }
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function startWorkout(chosenDate=null){
   // A date selected from the calendar is saved as that workout's local calendar day.
   const dateValue=chosenDate || new Date().toISOString().slice(0,10);
   session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,sets:Array.from({length:3},()=>({load:e.weight,reps:settings.targetReps,done:false}))}))};
-  currentIndex=0;setView("workoutView");renderExercise();
+  currentIndex=0;saveSession();setView("workoutView");renderExercise();
 }
+function resumeWorkout(){if(!session)return;setView("workoutView");renderExercise();}
 function current(){return session.exercises[currentIndex];}
 function renderExercise(){
   const e=current();if(!e)return;
@@ -57,24 +62,26 @@ function renderExercise(){
   document.getElementById("setsList").innerHTML="";
   e.sets.forEach((s,i)=>{
     const row=document.createElement("div");row.className="set-row";
-    row.innerHTML=`<div class="set-number">0${i+1}</div><label>Reps<input type="number" min="0" max="100" value="${s.reps}" aria-label="Repetisjoner sett ${i+1}"></label><label>Kg<input type="number" min="0" step="0.5" value="${s.load}" aria-label="Belastning sett ${i+1}"></label><button class="set-check ${s.done?"done":""}" aria-label="Marker sett fullført">${s.done?"✓":"○"}</button>`;
-    const inputs=row.querySelectorAll("input");inputs[0].addEventListener("change",()=>{s.reps=Math.max(0,Number(inputs[0].value)||0);updateCoach();});
-    inputs[1].addEventListener("change",()=>{s.load=Math.max(0,Number(inputs[1].value)||0);document.getElementById("loadValue").textContent=fmtNum(s.load);updateCoach();});
-    row.querySelector("button").addEventListener("click",()=>{s.done=!s.done;renderExercise();if(s.done&&i<e.sets.length-1)startRest();});
+    row.innerHTML=`<div class="set-number">0${i+1}</div><label>Reps<div class="rep-control"><button class="rep-minus" aria-label="Reduser reps i sett ${i+1}">−</button><input type="number" min="0" max="100" value="${s.reps}" aria-label="Repetisjoner sett ${i+1}"><button class="rep-plus" aria-label="Øk reps i sett ${i+1}">+</button></div></label><label>Kg<input type="number" min="0" step="0.5" value="${s.load}" aria-label="Belastning sett ${i+1}"></label><button class="set-check ${s.done?"done":""}" aria-label="Marker sett fullført">${s.done?"✓":"○"}</button>`;
+    const inputs=row.querySelectorAll("input");inputs[0].addEventListener("change",()=>{s.reps=Math.max(0,Number(inputs[0].value)||0);saveSession();updateCoach();});
+    row.querySelector(".rep-minus").addEventListener("click",()=>{s.reps=Math.max(0,(Number(s.reps)||0)-1);saveSession();renderExercise();});
+    row.querySelector(".rep-plus").addEventListener("click",()=>{s.reps=Math.min(100,(Number(s.reps)||0)+1);saveSession();renderExercise();});
+    inputs[1].addEventListener("change",()=>{s.load=Math.max(0,Number(inputs[1].value)||0);document.getElementById("loadValue").textContent=fmtNum(s.load);saveSession();updateCoach();});
+    row.querySelector(".set-check").addEventListener("click",()=>{s.done=!s.done;saveSession();renderExercise();if(s.done&&i<e.sets.length-1)startRest();});
     document.getElementById("setsList").appendChild(row);
   });
   document.getElementById("previousExercise").disabled=currentIndex===0;
   document.getElementById("nextExercise").textContent=currentIndex===session.exercises.length-1?"Siste øvelse ✓":"Neste øvelse →";
-  updateCoach();
+  updateCoach();saveSession();
 }
 function updateCoach(){
   const e=current();const last=e.sets[e.sets.length-1];const tip=document.getElementById("coachTip");
   if(last.reps>settings.targetReps)tip.innerHTML=`<strong>Progresjonsmulighet:</strong> Du har registrert ${last.reps} reps i siste sett – mer enn målet på ${settings.targetReps}. Hvis teknikken var god og dette kjentes kontrollert, vurder ${fmtNum(Number(last.load)+settings.incrementKg)} kg neste gang.`;
   else tip.innerHTML=`<strong>Fokus:</strong> Sikt mot ${settings.targetReps} gode repetisjoner i hvert sett. Når siste sett går over målet med kontroll, vurder en økning på ${settings.incrementKg} kg neste økt.`;
 }
-function changeLoad(delta){const e=current();e.sets.forEach(s=>s.load=Math.max(0,Number((s.load+delta).toFixed(2))));renderExercise();}
-function nextExercise(){if(currentIndex<session.exercises.length-1){currentIndex++;renderExercise();}else showToast("Du er på siste øvelse – avslutt økten når du er klar.");}
-function previousExercise(){if(currentIndex>0){currentIndex--;renderExercise();}}
+function changeLoad(delta){const e=current();e.sets.forEach(s=>s.load=Math.max(0,Number((s.load+delta).toFixed(2))));saveSession();renderExercise();}
+function nextExercise(){if(currentIndex<session.exercises.length-1){currentIndex++;saveSession();renderExercise();}else showToast("Du er på siste øvelse – avslutt økten når du er klar.");}
+function previousExercise(){if(currentIndex>0){currentIndex--;saveSession();renderExercise();}}
 function startRest(){
   stopRest();timerRemaining=settings.restSeconds;document.getElementById("restPanel").hidden=false;renderTimer();
   timerInterval=setInterval(()=>{timerRemaining--;renderTimer();if(timerRemaining<=0){stopRest();document.getElementById("restPanel").hidden=true;showToast("Pausen er ferdig – klar for neste sett!");}},1000);
@@ -89,7 +96,7 @@ function finishWorkout(){
   history.push({date:session.date,exercises:session.exercises,volume});
   // Remember the last used load per exercise; do not auto-increase it.
   session.exercises.forEach(se=>{const ex=exercises.find(e=>e.id===se.id);if(ex&&se.sets.length)ex.weight=se.sets[se.sets.length-1].load;});
-  saveData();session=null;stopRest();document.getElementById("restPanel").hidden=true;setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
+  saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
 }
 function renderProgress(){
   document.getElementById("progressWorkouts").textContent=history.length;
@@ -126,13 +133,14 @@ function exportData(){const blob=new Blob([JSON.stringify({settings,exercises,hi
 function resetData(){if(confirm("Dette sletter all historikk og tilbakestiller appen. Er du sikker?")){localStorage.removeItem(STORAGE_KEY);settings={targetReps:12,restSeconds:180,incrementKg:5};exercises=DEFAULT_EXERCISES.map(x=>({...x}));history=[];renderHome();renderProgress();renderHistory();showToast("Data er nullstilt.");}}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
 document.getElementById("startWorkoutBtn").addEventListener("click",()=>startWorkout());
+document.getElementById("resumeWorkoutBtn").addEventListener("click",resumeWorkout);
 document.getElementById("startBackfill").addEventListener("click",()=>{
   const date=document.getElementById("backfillDate").value;
   if(!date){showToast("Velg dato i kalenderen først.");return;}
   if(date>new Date().toISOString().slice(0,10)){showToast("Du kan ikke etterregistrere en fremtidig økt.");return;}
   startWorkout(date);
 });
-document.getElementById("backHome").addEventListener("click",()=>{if(confirm("Gå ut av økten? Økten blir ikke lagret før du avslutter.")){session=null;stopRest();setView("homeView");}});
+document.getElementById("backHome").addEventListener("click",()=>{if(confirm("Gå ut av økten? Økten blir ikke lagret før du avslutter.")){session=null;saveSession();stopRest();setView("homeView");}});
 document.getElementById("loadDown").addEventListener("click",()=>changeLoad(-settings.incrementKg));
 document.getElementById("loadUp").addEventListener("click",()=>changeLoad(settings.incrementKg));
 document.getElementById("nextExercise").addEventListener("click",nextExercise);
@@ -145,6 +153,7 @@ document.getElementById("saveSettings").addEventListener("click",saveSettings);
 document.getElementById("exportData").addEventListener("click",exportData);
 document.getElementById("resetData").addEventListener("click",resetData);
 loadData();
+const savedSession=loadSession();if(savedSession){session=savedSession.session;currentIndex=Math.min(savedSession.currentIndex||0,session.exercises.length-1);}
 document.getElementById("backfillDate").value=new Date().toISOString().slice(0,10);
 document.getElementById("backfillDate").max=new Date().toISOString().slice(0,10);
 document.getElementById("targetReps").value=settings.targetReps;
