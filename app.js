@@ -161,35 +161,52 @@ function finishWorkout(){
 function renderMuscleProgressChart(){
   const chart=document.getElementById("muscleProgressChart");
   if(!chart)return;
-  const recent=chronologicalHistory().slice(-10);
+  const map=document.querySelectorAll("#bodyMuscleMap [data-muscle]");
   const muscles=["Skuldre","Bryst","Rygg","Biceps","Triceps","Core","Bein","Sete"];
-  if(recent.length<2){
-    chart.innerHTML='<p class="muscle-progress-empty">Logg minst to økter for å vise relativ framgang på muskelkartet.</p>';
-    document.querySelectorAll("#bodyMuscleMap [data-muscle]").forEach(el=>el.classList.remove("muscle-moderate","muscle-good","muscle-top"));
+  map.forEach(el=>el.classList.remove("muscle-moderate","muscle-good","muscle-top"));
+  const workouts=chronologicalHistory().slice(-10);
+  if(workouts.length<2){
+    chart.innerHTML='<p class="muscle-progress-empty">Ikke nok data ennå. Logg minst to gjennomførte økter for å sammenligne utviklingen.</p>';
     return;
   }
-  const early=recent.slice(0,Math.min(3,recent.length));
-  const late=recent.slice(-Math.min(3,recent.length));
-  const vals=muscles.map(m=>{
-    const collect=ws=>ws.flatMap(w=>(w.exercises||[]).filter(entry=>{
-      const ex=exercises.find(x=>x.id===entry.id);return ex&&ex.muscles.includes(m);
-    }).flatMap(entry=>(entry.sets||[]).map(s=>({load:Number(s.load)||0,reps:Number(s.reps)||0}))));
-    const x=collect(early),y=collect(late);
-    if(!x.length||!y.length)return {muscle:m,change:null};
-    const mean=a=>a.reduce((sum,v)=>sum+v.load*(1+Math.min(v.reps,20)/100),0)/a.length;
-    const baseline=mean(x),current=mean(y);
-    return {muscle:m,change:baseline>0?((current-baseline)/baseline)*100:0};
+  // Compare earliest and latest available appearances for each exercise, rather than
+  // using a simple average across unrelated machines or assuming every workout has every exercise.
+  const perMuscle=muscles.map(muscle=>{
+    const perExercise=exercises.filter(ex=>ex.muscles.includes(muscle)).map(ex=>{
+      const entries=workouts.map(w=>({workout:w,entry:workoutExerciseEntry(w,ex.id)}))
+        .filter(x=>x.entry && Array.isArray(x.entry.sets) && x.entry.sets.length);
+      if(entries.length<2)return null;
+      const score=entry=>{
+        const valid=entry.sets.filter(s=>(Number(s.load)||0)>0 && (Number(s.reps)||0)>0);
+        if(!valid.length)return null;
+        // Epley estimate per set; use the strongest completed/recorded set.
+        return Math.max(...valid.map(s=>(Number(s.load)||0)*(1+(Number(s.reps)||0)/30)));
+      };
+      const first=score(entries[0].entry),last=score(entries[entries.length-1].entry);
+      if(first===null||last===null||first<=0)return null;
+      return {change:((last-first)/first)*100,exercise:ex.name};
+    }).filter(Boolean);
+    if(!perExercise.length)return {muscle,change:null};
+    return {muscle,change:perExercise.reduce((sum,x)=>sum+x.change,0)/perExercise.length};
   });
-  const available=vals.filter(v=>v.change!==null);
-  if(!available.length){chart.innerHTML='<p class="muscle-progress-empty">Ikke nok loggede data til å sammenligne muskelgruppene ennå.</p>';return;}
-  const sorted=[...available].sort((a,b)=>a.change-b.change);
-  const low=sorted[0].change,high=sorted[sorted.length-1].change;
-  const rankFor=m=>{const v=available.find(x=>x.muscle===m);if(!v)return "";const span=high-low;const r=span===0?0.5:(v.change-low)/span;return r>=.75?"muscle-top":r>=.45?"muscle-good":r>=.2?"muscle-moderate":"";};
-  document.querySelectorAll("#bodyMuscleMap [data-muscle]").forEach(el=>{
-    el.classList.remove("muscle-moderate","muscle-good","muscle-top");
-    const cls=rankFor(el.dataset.muscle);if(cls)el.classList.add(cls);
+  const valid=perMuscle.filter(x=>x.change!==null);
+  if(!valid.length){
+    chart.innerHTML='<p class="muscle-progress-empty">Det finnes ennå ikke minst to registrerte målinger for samme øvelse i perioden. Når øvelser er logget flere ganger, vises muskelgruppenes utvikling her.</p>';
+    return;
+  }
+  // Absolute, meaningful thresholds: equal/negative results remain neutral rather than
+  // turning every muscle green through a relative rank calculation.
+  const classFor=change=>change>=8?"muscle-top":change>=4?"muscle-good":change>0?"muscle-moderate":"";
+  map.forEach(el=>{
+    const value=valid.find(x=>x.muscle===el.dataset.muscle);
+    if(value){const cls=classFor(value.change);if(cls)el.classList.add(cls);}
   });
-  chart.innerHTML=available.sort((a,b)=>b.change-a.change).map(v=>`<div class="muscle-progress-row"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${Math.max(0,Math.min(100,(v.change-low)/(Math.max(1,high-low))*100))}%"></div></div><span class="muscle-progress-value">${v.change>=0?"+":""}${v.change.toFixed(1)}%</span></div>`).join("");
+  const labelFor=change=>change>=8?"Størst framgang":change>=4?"God framgang":change>0?"Liten framgang":change===0?"Ingen målbar endring":"Tilbakegang";
+  chart.innerHTML=valid.sort((a,b)=>b.change-a.change).map(v=>{
+    const width=Math.max(0,Math.min(100,v.change/15*100));
+    const cls=classFor(v.change);
+    return `<div class="muscle-progress-row ${cls}"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${width}%"></div></div><span class="muscle-progress-value">${v.change>0?"+":""}${v.change.toFixed(1)}%</span><small class="muscle-progress-status">${labelFor(v.change)}</small></div>`;
+  }).join("");
 }
 function renderProgress(){
   renderMuscleProgressChart();

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101827">
   <title>Styrkeloggen</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=1.8">
+  <link rel="stylesheet" href="styles.css?v=1.9">
 </head>
 <body>
   <div class="app-shell">
@@ -45,7 +45,7 @@
         <div class="view-head"><p class="eyebrow">UTVIKLING OVER TID</p></div><h2 class="page-title">Progresjon</h2>
         <div class="filter-row"><label for="muscleFilter">Muskelgruppe</label><select id="muscleFilter"><option value="Alle">Alle</option><option>Skuldre</option><option>Bryst</option><option>Rygg</option><option>Biceps</option><option>Triceps</option><option>Core</option><option>Bein</option><option>Sete</option></select></div>
         <div class="summary-grid progress-summary"><div class="summary-card"><span class="metric" id="progressWorkouts">0</span><span class="metric-label">økter</span></div><div class="summary-card"><span class="metric" id="progressVolume">0</span><span class="metric-label">kg totalt</span></div></div>
-        <div class="muscle-progress-panel"><p class="eyebrow">SISTE 10 ØKTER</p><h3>Muskelgruppenes progresjon</h3><p class="muted">Sammenligner gjennomsnittlig arbeidsbelastning per muskelgruppe i de første og siste øktene i perioden. Dette er en trendindikator, ikke en direkte måling av muskelstyrke.</p><div class="body-map-wrap">
+        <div class="muscle-progress-panel"><p class="eyebrow">SISTE 10 ØKTER</p><h3>Muskelgruppenes progresjon</h3><p class="muted">Sammenligner estimert styrkeutvikling i samme øvelse fra første til siste registrering blant de siste 10 øktene. Dette er en treningsindikator – ikke en direkte måling av muskelvekst.</p><div class="body-map-wrap">
           <div class="body-map" id="bodyMuscleMap">
             <div class="body-view"><p>FORFRA</p><svg viewBox="0 0 180 340" role="img" aria-label="Muskelkart forfra">
               <circle cx="90" cy="24" r="19" class="body-base"/>
@@ -68,7 +68,7 @@
             </svg></div>
           </div>
           <div class="muscle-map-legend"><span><i class="legend-dot" style="background:#3a465e"></i>Lite / ingen</span><span><i class="legend-dot" style="background:#94b7c5"></i>Moderat</span><span><i class="legend-dot" style="background:#c8f169"></i>God</span><span><i class="legend-dot" style="background:#f5a65b"></i>Størst</span></div>
-          <p class="muted map-note">Fargene viser relativ framgang i registrert belastning/reps i denne perioden – ikke direkte muskelvekst.</p>
+          <p class="muted map-note">Fargene viser endring i estimert styrke: nøytral = ingen/negativ endring, blå = liten, grønn = god, oransje = størst. Ikke en direkte måling av muskelvekst.</p>
         </div>
         <div id="muscleProgressChart" class="muscle-progress-chart"></div></div>
         <div id="progressCards" class="progress-cards"></div>
@@ -87,6 +87,6 @@
     <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=1.8"></script>
+  <script src="app.js?v=1.9"></script>
 </body>
 </html>
