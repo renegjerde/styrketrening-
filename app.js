@@ -104,8 +104,10 @@ function renderProgress(){
   const filter=document.getElementById("muscleFilter").value;const box=document.getElementById("progressCards");box.innerHTML="";
   const matching=exercises.filter(e=>filter==="Alle"||e.muscles.includes(filter));
   if(!matching.length){box.innerHTML='<div class="empty-state">Ingen øvelser i denne muskelgruppen ennå.</div>';return;}
+  // Use chronological order for every progression curve, including backfilled sessions.
+  const chronologicalHistory=[...history].sort((a,b)=>new Date(a.date)-new Date(b.date));
   matching.forEach(ex=>{
-    const points=history.map(w=>{const found=w.exercises.find(x=>x.id===ex.id);if(!found)return null;return Math.max(...found.sets.map(s=>Number(s.load)||0));}).filter(v=>v!==null);
+    const points=chronologicalHistory.map(w=>{const found=w.exercises.find(x=>x.id===ex.id);if(!found)return null;return Math.max(...found.sets.map(s=>Number(s.load)||0));}).filter(v=>v!==null);
     const currentLoad=points.length?points[points.length-1]:ex.weight;
     const card=document.createElement("div");card.className="progress-card";
     card.innerHTML=`<div class="progress-card-top"><div><h3>${escapeHtml(ex.name)}</h3><div class="small-muted">${ex.muscles.join(" · ")} · ${history.length?points.length+" loggede økter":"ikke logget ennå"}</div></div><div class="progress-current">${fmtNum(currentLoad)} kg</div></div>${points.length>1?makeSparkline(points):'<div class="small-muted" style="margin-top:12px">Logg flere økter for å se utviklingskurven.</div>'}`;
