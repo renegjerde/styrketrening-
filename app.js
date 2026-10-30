@@ -38,6 +38,43 @@ function fmtNum(n){return Math.round(n).toLocaleString("nb-NO");}
 function showToast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2200);}
 function setView(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===id));if(id==="progressView")renderProgress();if(id==="historyView")renderHistory();}
 function totalVolume(items){return items.reduce((sum,e)=>sum+(e.sets||[]).reduce((s,set)=>s+(Number(set.load)||0)*(Number(set.reps)||0),0),0);}
+function workoutExerciseEntry(workout,id){return (workout?.exercises||[]).find(e=>e.id===id)||null;}
+function isEligibleForIncrease(entry){
+  if(!entry||entry.hold||!Array.isArray(entry.sets)||entry.sets.length===0)return false;
+  // Require every planned set completed and the final set beyond the rep target.
+  return entry.sets.every(s=>s.done) && Number(entry.sets[entry.sets.length-1].reps)>settings.targetReps;
+}
+function recommendOneIncrease(){
+  const latest=latestWorkout();
+  if(!latest)return null;
+  const candidates=exercises.map(ex=>{
+    const entry=workoutExerciseEntry(latest,ex.id);
+    if(!isEligibleForIncrease(entry))return null;
+    const lastLoad=Number(entry.sets[entry.sets.length-1].load)||ex.weight;
+    const muscleCoverage=ex.muscles.length;
+    return {exercise:ex,entry,lastLoad,muscleCoverage};
+  }).filter(Boolean);
+  if(!candidates.length)return null;
+  // Conservative tie-break: choose the least recently increased movement first;
+  // avoid increasing multiple exercises or over-weighting overlapping muscle groups.
+  const scored=candidates.map(c=>{
+    const previous=chronologicalHistory().filter(w=>w.date<latest.date&&workoutExerciseEntry(w,c.exercise.id));
+    const previousLoad=previous.length?Number(workoutExerciseEntry(previous.at(-1),c.exercise.id).sets.at(-1).load):c.lastLoad;
+    const gain=c.lastLoad-previousLoad;
+    return {...c,score:(c.entry.sets.at(-1).reps-settings.targetReps)*2 - Math.max(0,gain/settings.incrementKg)*1.5 - (c.muscleCoverage>2?1:0)};
+  }).sort((a,b)=>b.score-a.score);
+  return candidates.length?scored[0]:null;
+}
+function renderRecommendation(){
+  const box=document.getElementById("progressionRecommendation");
+  if(!box)return;
+  const candidate=recommendOneIncrease();
+  if(candidate){
+    box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKNING · ÉN ØVELSE</p><h3>${escapeHtml(candidate.exercise.name)}</h3><div class="recommendation-load">${fmtNum(candidate.lastLoad)} kg → ${fmtNum(candidate.lastLoad+settings.incrementKg)} kg</div><p>Alle sett er fullført, og siste sett gikk over ${settings.targetReps} reps. Dette er et forsiktig forslag basert på øktloggen – ikke en automatisk økning. Hvis øvelsen kjentes tung eller teknikken sviktet, behold belastningen.</p>`;
+  }else{
+    box.innerHTML=`<p class="eyebrow">PROGRESJONSVURDERING</p><h3 class="no-increase">Ingen økning anbefales akkurat nå</h3><p>Fullfør settene med kontroll og bygg opp repetisjonene. Appen foreslår maksimalt én øvelse per økt, og bare når siste sett går over ${settings.targetReps} reps. Ved tunge eller ujevne økter er det helt riktig å holde vekten.</p>`;
+  }
+}
 function renderHome(){
   document.getElementById("workoutCount").textContent=history.length;
   document.getElementById("volumeMetric").textContent=fmtNum(history.reduce((s,w)=>s+(w.volume||0),0));
@@ -52,12 +89,13 @@ function renderHome(){
   document.getElementById("editOrderBtn").textContent=orderEditing?"Ferdig":"Endre rekkefølge";
   document.getElementById("resumeWorkoutBtn").hidden=!session;
   document.getElementById("startWorkoutBtn").hidden=!!session;
+  renderRecommendation();
 }
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
 function startWorkout(chosenDate=null){
   // A date selected from the calendar is saved as that workout's local calendar day.
   const dateValue=chosenDate || new Date().toISOString().slice(0,10);
-  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,sets:Array.from({length:3},()=>({load:latestExerciseLoad(e.id,e.weight),reps:settings.targetReps,done:false}))}))};
+  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,hold:false,sets:Array.from({length:3},()=>({load:latestExerciseLoad(e.id,e.weight),reps:settings.targetReps,done:false}))}))};
   currentIndex=0;saveSession();setView("workoutView");renderExercise();
 }
 function resumeWorkout(){if(!session)return;setView("workoutView");renderExercise();}
@@ -82,11 +120,15 @@ function renderExercise(){
   });
   document.getElementById("previousExercise").disabled=currentIndex===0;
   document.getElementById("nextExercise").textContent=currentIndex===session.exercises.length-1?"Siste øvelse ✓":"Neste øvelse →";
+  const holdToggle=document.getElementById("markStruggle");
+  holdToggle.checked=!!e.hold;
+  holdToggle.onchange=()=>{e.hold=holdToggle.checked;saveSession();updateCoach();};
   updateCoach();saveSession();
 }
 function updateCoach(){
   const e=current();const last=e.sets[e.sets.length-1];const tip=document.getElementById("coachTip");
-  if(last.reps>settings.targetReps)tip.innerHTML=`<strong>Progresjonsmulighet:</strong> Du har registrert ${last.reps} reps i siste sett – mer enn målet på ${settings.targetReps}. Hvis teknikken var god og dette kjentes kontrollert, vurder ${fmtNum(Number(last.load)+settings.incrementKg)} kg neste gang.`;
+  if(e.hold)tip.innerHTML=`<strong>Hold belastningen:</strong> Du har markert at øvelsen kjentes tung. Ikke anbefal økning her – prioriter kontroll og stabil gjennomføring.`;
+  else if(last.reps>settings.targetReps)tip.innerHTML=`<strong>Progresjonsmulighet:</strong> Du har registrert ${last.reps} reps i siste sett – mer enn målet på ${settings.targetReps}. Hvis teknikken var god og dette kjentes kontrollert, vurder ${fmtNum(Number(last.load)+settings.incrementKg)} kg neste gang.`;
   else tip.innerHTML=`<strong>Fokus:</strong> Sikt mot ${settings.targetReps} gode repetisjoner i hvert sett. Når siste sett går over målet med kontroll, vurder en økning på ${settings.incrementKg} kg neste økt.`;
 }
 function changeLoad(delta){const e=current();e.sets.forEach(s=>s.load=Math.max(0,Number((s.load+delta).toFixed(2))));saveSession();renderExercise();}

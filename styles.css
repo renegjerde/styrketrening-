@@ -17,3 +17,12 @@
 .coach-tip{padding:9px 11px;margin-top:8px;font-size:10px;line-height:1.35}.rest-panel{padding:10px 13px;margin-top:8px}.timer{font-size:23px}.rest-panel .eyebrow{margin-bottom:2px}.rest-panel .secondary-button{padding:10px 13px;font-size:11px}
 .workout-actions{margin-top:10px;gap:7px}.workout-actions button{padding:11px 12px;font-size:12px}.finish-button{margin-top:7px;padding:7px;font-size:11px}
 @media(max-height:850px){.topbar{padding:7px 0}.hero{min-height:0}.bottom-nav{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}}
+
+.recommendation-card{margin:12px 0 18px;padding:15px 16px;background:#202b40;border:1px solid #35425a;border-radius:16px}
+.recommendation-card .eyebrow{margin:0 0 6px;font-size:10px;letter-spacing:1.5px;color:#a1adc2}
+.recommendation-card h3{margin:0 0 5px;font-size:17px}
+.recommendation-card p{margin:0;color:#a1adc2;font-size:12px;line-height:1.5}
+.recommendation-card .recommendation-load{color:#c8f169;font-size:20px;font-weight:750;margin:7px 0}
+.recommendation-card .no-increase{color:#dce3ef}
+.hold-toggle{display:flex;align-items:center;gap:9px;font-size:12px;color:#a1adc2;margin:9px 0 5px}
+.hold-toggle input{accent-color:#c8f169;width:17px;height:17px}

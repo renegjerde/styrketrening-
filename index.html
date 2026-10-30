@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101827">
   <title>Styrkeloggen</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=1.6">
+  <link rel="stylesheet" href="styles.css?v=1.7">
 </head>
 <body>
   <div class="app-shell">
@@ -23,6 +23,7 @@
           <div class="summary-card"><span class="metric" id="streakMetric">—</span><span class="metric-label">siste økt</span></div>
         </div>
         <div class="section-heading"><div><p class="eyebrow">PROGRAMMET DITT</p><h3>Maskinrunde</h3></div><button class="text-button" id="editOrderBtn">Endre rekkefølge</button></div>
+        <div id="progressionRecommendation" class="recommendation-card"></div>
         <div id="exerciseList" class="exercise-list"></div>
         <button class="primary-button full" id="startWorkoutBtn">Start treningsøkt <span>→</span></button>
         <button class="secondary-button full" id="resumeWorkoutBtn" hidden>Fortsett pågående økt <span>→</span></button>
@@ -36,6 +37,7 @@
         <div class="sets-card"><div class="sets-header"><h3>Settene dine</h3><span class="muted">Mål: 12 reps</span></div><div id="setsList"></div></div>
         <div class="rest-panel" id="restPanel" hidden><div><span class="eyebrow">PAUSE</span><div class="timer" id="timerDisplay">03:00</div></div><button class="secondary-button" id="skipRest">Hopp over</button></div>
         <div id="coachTip" class="coach-tip"></div>
+        <label class="hold-toggle"><input type="checkbox" id="markStruggle"> Denne øvelsen kjentes tung – hold belastningen</label>
         <div class="workout-actions"><button class="secondary-button" id="previousExercise">← Forrige</button><button class="primary-button" id="nextExercise">Neste øvelse →</button></div>
         <button class="finish-button" id="finishWorkout">Avslutt og lagre økt</button>
       </section>
@@ -59,6 +61,6 @@
     <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=1.6"></script>
+  <script src="app.js?v=1.7"></script>
 </body>
 </html>
