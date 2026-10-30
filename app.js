@@ -25,6 +25,15 @@ function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify({settings,ex
 function saveSession(){if(session){localStorage.setItem(STORAGE_KEY+"_session",JSON.stringify({session,currentIndex}));}else{localStorage.removeItem(STORAGE_KEY+"_session");}}
 function loadSession(){try{const raw=localStorage.getItem(STORAGE_KEY+"_session");if(!raw)return null;const d=JSON.parse(raw);return d?.session?d:null;}catch(e){return null;}}
 function fmtDate(date){return new Date(date).toLocaleDateString("nb-NO",{day:"numeric",month:"short",year:"numeric"});}
+function chronologicalHistory(){return [...history].sort((a,b)=>new Date(a.date)-new Date(b.date));}
+function latestWorkout(){return chronologicalHistory().at(-1)||null;}
+function latestExerciseWorkout(exerciseId){return chronologicalHistory().filter(w=>(w.exercises||[]).some(e=>e.id===exerciseId)).at(-1)||null;}
+function latestExerciseLoad(exerciseId,fallback){
+  const workout=latestExerciseWorkout(exerciseId);
+  const entry=workout?.exercises?.find(e=>e.id===exerciseId);
+  if(!entry?.sets?.length)return fallback;
+  return Number(entry.sets[entry.sets.length-1].load)||fallback;
+}
 function fmtNum(n){return Math.round(n).toLocaleString("nb-NO");}
 function showToast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2200);}
 function setView(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===id));if(id==="progressView")renderProgress();if(id==="historyView")renderHistory();}
@@ -32,10 +41,11 @@ function totalVolume(items){return items.reduce((sum,e)=>sum+(e.sets||[]).reduce
 function renderHome(){
   document.getElementById("workoutCount").textContent=history.length;
   document.getElementById("volumeMetric").textContent=fmtNum(history.reduce((s,w)=>s+(w.volume||0),0));
-  document.getElementById("streakMetric").textContent=history.length?fmtDate(history[history.length-1].date).replace(/\.\s*\d{4}$/,""):"—";
+  const latest=latestWorkout();
+  document.getElementById("streakMetric").textContent=latest?fmtDate(latest.date).replace(/\.\s*\d{4}$/,""):"—";
   const list=document.getElementById("exerciseList");list.innerHTML="";
   exercises.forEach((e,i)=>{const row=document.createElement("div");row.className="exercise-row";row.draggable=orderEditing;row.dataset.id=e.id;
-    row.innerHTML=`<div class="exercise-icon">${e.icon||"✦"}</div><div class="exercise-info"><strong>${escapeHtml(e.name)}</strong><span>${e.muscles.join(" · ")} · 3 × ${settings.targetReps}</span></div><div class="exercise-weight">${fmtNum(e.weight)}<small>kg · ${i+1}/${exercises.length}</small></div>`;
+    row.innerHTML=`<div class="exercise-icon">${e.icon||"✦"}</div><div class="exercise-info"><strong>${escapeHtml(e.name)}</strong><span>${e.muscles.join(" · ")} · 3 × ${settings.targetReps}</span></div><div class="exercise-weight">${fmtNum(latestExerciseLoad(e.id,e.weight))}<small>kg · ${i+1}/${exercises.length}</small></div>`;
     if(orderEditing){row.addEventListener("dragstart",()=>{dragId=e.id;row.classList.add("dragging")});row.addEventListener("dragend",()=>row.classList.remove("dragging"));row.addEventListener("dragover",ev=>ev.preventDefault());row.addEventListener("drop",ev=>{ev.preventDefault();const target=e.id;if(dragId&&dragId!==target){const from=exercises.findIndex(x=>x.id===dragId),to=exercises.findIndex(x=>x.id===target);const [m]=exercises.splice(from,1);exercises.splice(to,0,m);saveData();renderHome();}dragId=null;});}
     list.appendChild(row);
   });
@@ -47,7 +57,7 @@ function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;",
 function startWorkout(chosenDate=null){
   // A date selected from the calendar is saved as that workout's local calendar day.
   const dateValue=chosenDate || new Date().toISOString().slice(0,10);
-  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,sets:Array.from({length:3},()=>({load:e.weight,reps:settings.targetReps,done:false}))}))};
+  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,sets:Array.from({length:3},()=>({load:latestExerciseLoad(e.id,e.weight),reps:settings.targetReps,done:false}))}))};
   currentIndex=0;saveSession();setView("workoutView");renderExercise();
 }
 function resumeWorkout(){if(!session)return;setView("workoutView");renderExercise();}
@@ -93,9 +103,17 @@ function finishWorkout(){
   const completed=session.exercises.filter(e=>e.sets.some(s=>s.done));
   if(!completed.length&&!confirm("Ingen sett er markert som fullført. Vil du lagre økten likevel?"))return;
   const volume=totalVolume(session.exercises);
+  const previousLatestByExercise=new Map(session.exercises.map(se=>[se.id,latestExerciseWorkout(se.id)]));
   history.push({date:session.date,exercises:session.exercises,volume});
-  // Remember the last used load per exercise; do not auto-increase it.
-  session.exercises.forEach(se=>{const ex=exercises.find(e=>e.id===se.id);if(ex&&se.sets.length)ex.weight=se.sets[se.sets.length-1].load;});
+  // Keep each exercise's displayed/default load tied to its latest performed date.
+  // Backfilled older workouts must not overwrite a newer session's load.
+  session.exercises.forEach(se=>{
+    const ex=exercises.find(e=>e.id===se.id);
+    const previousLatest=previousLatestByExercise.get(se.id);
+    if(ex&&se.sets.length&&(!previousLatest||new Date(session.date)>=new Date(previousLatest.date))){
+      ex.weight=Number(se.sets[se.sets.length-1].load)||ex.weight;
+    }
+  });
   saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
 }
 function renderProgress(){
@@ -105,9 +123,9 @@ function renderProgress(){
   const matching=exercises.filter(e=>filter==="Alle"||e.muscles.includes(filter));
   if(!matching.length){box.innerHTML='<div class="empty-state">Ingen øvelser i denne muskelgruppen ennå.</div>';return;}
   // Use chronological order for every progression curve, including backfilled sessions.
-  const chronologicalHistory=[...history].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const chronological=chronologicalHistory();
   matching.forEach(ex=>{
-    const points=chronologicalHistory.map(w=>{const found=w.exercises.find(x=>x.id===ex.id);if(!found)return null;return Math.max(...found.sets.map(s=>Number(s.load)||0));}).filter(v=>v!==null);
+    const points=chronological.map(w=>{const found=w.exercises.find(x=>x.id===ex.id);if(!found)return null;return Math.max(...found.sets.map(s=>Number(s.load)||0));}).filter(v=>v!==null);
     const currentLoad=points.length?points[points.length-1]:ex.weight;
     const card=document.createElement("div");card.className="progress-card";
     card.innerHTML=`<div class="progress-card-top"><div><h3>${escapeHtml(ex.name)}</h3><div class="small-muted">${ex.muscles.join(" · ")} · ${history.length?points.length+" loggede økter":"ikke logget ennå"}</div></div><div class="progress-current">${fmtNum(currentLoad)} kg</div></div>${points.length>1?makeSparkline(points):'<div class="small-muted" style="margin-top:12px">Logg flere økter for å se utviklingskurven.</div>'}`;
