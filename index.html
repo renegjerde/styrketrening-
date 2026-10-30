@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#101827">
+  <title>Styrkeloggen</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div><div class="eyebrow">TRENING · LOGG · PROGRESJON</div><h1>Styrkeloggen<span> .</span></h1></div>
+      <div class="avatar" aria-label="Styrke">S</div>
+    </header>
+    <main>
+      <section id="homeView" class="view active">
+        <div class="hero"><div><p class="eyebrow">DIN NESTE ØKT</p><h2>Bygg videre.<br><em>Sett for sett.</em></h2><p class="muted">Logg økten, følg utviklingen og la progresjonen komme naturlig.</p></div><div class="hero-mark" aria-hidden="true">↗</div></div>
+        <div class="summary-grid">
+          <div class="summary-card"><span class="metric" id="workoutCount">0</span><span class="metric-label">økter logget</span></div>
+          <div class="summary-card"><span class="metric" id="volumeMetric">0</span><span class="metric-label">kg løftet totalt</span></div>
+          <div class="summary-card"><span class="metric" id="streakMetric">—</span><span class="metric-label">siste økt</span></div>
+        </div>
+        <div class="section-heading"><div><p class="eyebrow">PROGRAMMET DITT</p><h3>Maskinrunde</h3></div><button class="text-button" id="editOrderBtn">Endre rekkefølge</button></div>
+        <div id="exerciseList" class="exercise-list"></div>
+        <button class="primary-button full" id="startWorkoutBtn">Start treningsøkt <span>→</span></button>
+        <button class="secondary-button full" id="resumeWorkoutBtn" hidden>Fortsett pågående økt <span>→</span></button>
+        <p class="small-note">Standard: 3 sett × 12 reps · 3 min pause · belastning økes i trinn på 5 kg.</p>
+      </section>
+      <section id="workoutView" class="view">
+        <div class="view-head"><button class="back-button" id="backHome">‹ Oversikt</button><span class="session-pill" id="sessionProgress">ØKT PÅGÅR</span></div>
+        <div class="workout-title"><p class="eyebrow">TRENINGSPROGRAM</p><h2 id="currentExerciseName">Skulderpress</h2><p class="muted" id="currentMuscles">Skuldre · Triceps</p></div>
+        <div class="exercise-progress"><div id="progressFill"></div></div>
+        <div class="load-card"><div><span class="eyebrow">BELASTNING</span><div class="load-value"><span id="loadValue">40</span><small>kg</small></div></div><div class="load-controls"><button id="loadDown" aria-label="Reduser belastning">−</button><button id="loadUp" aria-label="Øk belastning">+</button></div></div>
+        <div class="sets-card"><div class="sets-header"><h3>Settene dine</h3><span class="muted">Mål: 12 reps</span></div><div id="setsList"></div></div>
+        <div class="rest-panel" id="restPanel" hidden><div><span class="eyebrow">PAUSE</span><div class="timer" id="timerDisplay">03:00</div></div><button class="secondary-button" id="skipRest">Hopp over</button></div>
+        <div id="coachTip" class="coach-tip"></div>
+        <div class="workout-actions"><button class="secondary-button" id="previousExercise">← Forrige</button><button class="primary-button" id="nextExercise">Neste øvelse →</button></div>
+        <button class="finish-button" id="finishWorkout">Avslutt og lagre økt</button>
+      </section>
+      <section id="progressView" class="view">
+        <div class="view-head"><p class="eyebrow">UTVIKLING OVER TID</p></div><h2 class="page-title">Progresjon</h2>
+        <div class="filter-row"><label for="muscleFilter">Muskelgruppe</label><select id="muscleFilter"><option value="Alle">Alle</option><option>Skuldre</option><option>Bryst</option><option>Rygg</option><option>Biceps</option><option>Triceps</option><option>Core</option><option>Bein</option><option>Sete</option></select></div>
+        <div class="summary-grid progress-summary"><div class="summary-card"><span class="metric" id="progressWorkouts">0</span><span class="metric-label">økter</span></div><div class="summary-card"><span class="metric" id="progressVolume">0</span><span class="metric-label">kg totalt</span></div></div>
+        <div id="progressCards" class="progress-cards"></div>
+      </section>
+      <section id="historyView" class="view">
+        <p class="eyebrow">TIDLIGERE ØKTER</p><h2 class="page-title">Historikk</h2>
+        <div class="backfill-card"><div><p class="eyebrow">MANGLER EN ØKT?</p><h3>Etterregistrer trening</h3><p class="muted">Velg datoen du trente, og registrer økten som vanlig.</p></div><label class="date-label" for="backfillDate">Treningsdato</label><input id="backfillDate" type="date"><button class="primary-button full" id="startBackfill">Registrer økt på valgt dato →</button></div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+      <section id="settingsView" class="view">
+        <p class="eyebrow">TILPASS APPEN</p><h2 class="page-title">Innstillinger</h2>
+        <div class="settings-card"><label>Standard repetisjonsmål <input id="targetReps" type="number" min="1" max="30" value="12"></label><label>Pause mellom sett (sekunder) <input id="restSeconds" type="number" min="0" max="900" value="180"></label><label>Økning per trinn (kg) <input id="incrementKg" type="number" min="1" max="50" value="5"></label><button class="primary-button full" id="saveSettings">Lagre innstillinger</button></div>
+        <div class="settings-card"><h3>Data</h3><p class="muted">Treningshistorikken lagres lokalt i nettleseren på denne enheten.</p><button class="secondary-button" id="exportData">Eksporter backup (JSON)</button><button class="danger-button" id="resetData">Nullstill all treningsdata</button></div>
+      </section>
+    </main>
+    <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
+  </div>
+  <div id="toast" class="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>
