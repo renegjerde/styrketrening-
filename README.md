@@ -43,3 +43,10 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Model asset is loaded from the upstream project at runtime; this initial prototype therefore requires internet access. Three.js modules are loaded from jsDelivr.
 - Écorché model attribution: Écorché (github.com/Charleeh/ecorche), CC BY-SA 4.0. Based on BodyParts3D, © The Database Center for Life Science, CC BY 4.0, and Z-Anatomy by Gauthier Kervyn, CC BY-SA 4.0. Model adaptations/derivatives shared must retain CC BY-SA 4.0.
 - This is a viewer prototype. Muscle progression coloring is not yet wired to individual mesh names; that mapping is the next integration stage.
+
+
+## Versjon 2.1 – feilhåndtering for 3D
+- Viser feilmelding og «Prøv igjen» hvis modellen ikke lastes innen 25 sekunder.
+- Viser egen melding hvis selve 3D-modulen ikke kan lastes fra CDN.
+- Fortsatt avhengig av internett for eksterne Three.js-moduler og Écorché-modellen.
+- Progresjonsfargene på 3D-muskler er ikke ferdig koblet til historikken i denne versjonen.

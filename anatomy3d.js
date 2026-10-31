@@ -5,6 +5,13 @@ import { MeshoptDecoder } from "https://cdn.jsdelivr.net/npm/three@0.170.0/examp
 
 const viewport=document.getElementById("anatomy3dViewport");
 const status=document.getElementById("anatomy3dStatus");
+let loadTimer=null;
+function showLoadError(message){
+ if(!status)return;
+ status.innerHTML=`<div class="anatomy3d-error"><strong>3D-modellen ble ikke lastet</strong><p>${message}</p><button type="button" id="anatomyRetry">Prøv igjen</button></div>`;
+ status.style.display="grid";
+ document.getElementById("anatomyRetry")?.addEventListener("click",()=>location.reload());
+}
 if(viewport){
  const scene=new THREE.Scene(); scene.background=new THREE.Color("#151d2d");
  const camera=new THREE.PerspectiveCamera(35,1,.01,100); camera.position.set(0,1.05,3.2);
@@ -14,12 +21,13 @@ if(viewport){
  const fill=new THREE.DirectionalLight(0x9bb9e8,1.2);fill.position.set(-3,1,-3);scene.add(fill);
  const controls=new OrbitControls(camera,renderer.domElement);controls.enableDamping=true;controls.dampingFactor=.07;controls.target.set(0,.9,0);controls.minDistance=1.4;controls.maxDistance=5.5;controls.enablePan=false;
  const loader=new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+ loadTimer=setTimeout(()=>showLoadError("Det tok for lang tid å hente anatomimodellen. Kontroller nettforbindelsen, og prøv å laste siden på nytt."),25000);
  const modelUrl="https://raw.githubusercontent.com/Charleeh/ecorche/main/model/ecorche.meshopt.glb";
  let root=null,showSkeleton=false; const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
  function resize(){const w=viewport.clientWidth||320,h=viewport.clientHeight||430;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
  new ResizeObserver(resize).observe(viewport);resize();
  loader.load(modelUrl,gltf=>{
-  root=gltf.scene;scene.add(root);
+  clearTimeout(loadTimer);\n  root=gltf.scene;scene.add(root);
   root.traverse(o=>{if(!o.isMesh)return;const layer=o.userData.layer||"";if(layer==="skeleton")o.visible=showSkeleton;
     if(layer==="superficial muscles"||layer==="deep muscles"){o.material=o.material.clone();o.material.side=THREE.DoubleSide;}
   });
@@ -28,7 +36,7 @@ if(viewport){
   root.position.sub(center);root.scale.multiplyScalar(1.75/Math.max(size.y,.01));root.position.y=.88;
   controls.target.set(0,.88,0);camera.position.set(0,1.0,3.15);controls.update();
   if(status)status.remove();
- },undefined,error=>{if(status)status.textContent="Kunne ikke laste 3D-modellen. Kontroller nettforbindelsen og prøv å oppdatere siden.";console.error(error);});
+ },undefined,error=>{clearTimeout(loadTimer);showLoadError("Modellfilen eller en ekstern ressurs svarte med en feil. Kontroller nettforbindelsen, og prøv igjen.");console.error("Écorché model load failed:",error);});
  function animate(){requestAnimationFrame(animate);controls.update();renderer.render(scene,camera);}animate();
  renderer.domElement.addEventListener("pointerup",e=>{if(!root)return;const r=renderer.domElement.getBoundingClientRect();pointer.x=((e.clientX-r.left)/r.width)*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObject(root,true).find(h=>h.object.isMesh);if(hit){const name=hit.object.userData.name||hit.object.name||"Muskel";const el=document.getElementById("anatomySelected");if(el)el.textContent=name;}});
  const musclesBtn=document.getElementById("anatomyMuscles"),bothBtn=document.getElementById("anatomyBoth");

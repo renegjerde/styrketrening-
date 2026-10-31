@@ -71,3 +71,8 @@
 .anatomy3d-loading{position:absolute;inset:0;display:grid;place-items:center;color:#a1adc2;font-size:13px;text-align:center;padding:24px;z-index:1}
 .anatomy3d-footer{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;color:#a1adc2;font-size:11px;margin-top:10px}
 .anatomy3d-note{font-size:10px;line-height:1.5;margin:10px 2px 0}
+
+.anatomy3d-error{max-width:320px;text-align:center;color:#dbe4f2}
+.anatomy3d-error strong{display:block;font-size:14px;margin-bottom:8px}
+.anatomy3d-error p{font-size:12px;line-height:1.5;color:#a1adc2;margin:0 0 12px}
+.anatomy3d-error button{background:#c8f169;color:#18202d;border:0;border-radius:9px;padding:9px 14px;font-weight:600}

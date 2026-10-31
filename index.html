@@ -49,7 +49,7 @@
           <div class="anatomy3d-toolbar"><span class="eyebrow">INTERAKTIV 3D-MUSKULATUR</span><div class="anatomy3d-actions"><button id="anatomyMuscles" class="active">Muskler</button><button id="anatomyBoth">Muskler + skjelett</button></div></div>
           <div id="anatomy3dViewport" class="anatomy3d-viewport"><div class="anatomy3d-loading" id="anatomy3dStatus">Laster 3D-modellen …</div></div>
           <div class="anatomy3d-footer"><span>👆 Dra for å rotere · Knip for å zoome</span><span id="anatomySelected">Velg en muskel</span></div>
-          <p class="muted anatomy3d-note">Anatomimodell: Écorché · CC BY-SA 4.0 · Én voksen mannlig modell. Treningsprogresjon vises med fargekoder når kobling til muskelgrupper er aktivert.</p>
+          <p class="muted anatomy3d-note">Anatomimodell: Écorché · CC BY-SA 4.0 · Én voksen mannlig modell. Fargekobling til treningshistorikken er neste integrasjonssteg; tallene under viser foreløpig beregnet styrkeutvikling.</p>
         </div>
         <div id="muscleProgressChart" class="muscle-progress-chart"></div></div>
         <div id="progressCards" class="progress-cards"></div>
@@ -68,6 +68,18 @@
     <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=2.0"></script><script type="module" src="anatomy3d.js?v=2.0"></script>
+  <script src="app.js?v=2.1"></script>
+  <script>
+    window.addEventListener("error", function(event) {
+      if (event.target && event.target.tagName === "SCRIPT" && /anatomy3d/.test(event.target.src || "")) {
+        const status = document.getElementById("anatomy3dStatus");
+        if (status) {
+          status.innerHTML = '<div class="anatomy3d-error"><strong>3D-visningen kunne ikke starte</strong><p>En nødvendig 3D-modul ble ikke lastet. Dette kan skyldes nettverk eller blokkering av en ekstern ressurs.</p><button type="button" onclick="location.reload()">Prøv igjen</button></div>';
+          status.style.display = "grid";
+        }
+      }
+    }, true);
+  </script>
+  <script type="module" src="anatomy3d.js?v=2.1"></script>
 </body>
 </html>
