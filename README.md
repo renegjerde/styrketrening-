@@ -124,3 +124,11 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Øvrige øvelser starter med sist registrerte belastning.
 - Historiske økter som legges inn via kalender får ikke automatisk fremtidig anbefaling.
 - Brukeren kan fortsatt justere belastningen manuelt før eller under økten.
+
+
+## Versjon 3.2 – korrigert anatomivisning
+- Fjerner feilplassert SVG-kroppssilhuett og alle generiske fargeflater som overlappet anatomibildet.
+- Viser den opprinnelige realistiske anatomiske illustrasjonen rent og uten overlegg.
+- Muskelgruppenes progresjon vises fortsatt i fargede målere under illustrasjonen.
+- Beholder anbefalt belastning fra forrige økt (v3.1).
+- Individuell fargelegging av muskler er satt på pause til vi har anatomisk presise masker som er tilpasset selve bildet.

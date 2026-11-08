@@ -305,57 +305,6 @@ function finishWorkout(){
   });
   saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;updateWorkoutDock("homeView");setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
 }
-let anatomyMapReady=false;
-let anatomyMapLoading=null;
-const anatomyPalette={down:"#ef4444",stable:"#94a3b8",moderate:"#38bdf8",good:"#22c55e",top:"#a3e635"};
-function anatomyClass(change){
-  if(change===null||!Number.isFinite(change))return "stable";
-  if(change < -3)return "down";
-  if(change < 3)return "stable";
-  if(change < 10)return "moderate";
-  if(change < 20)return "good";
-  return "top";
-}
-async function loadAnatomyMap(){
-  const host=document.getElementById("anatomyColorOverlay");
-  if(!host||anatomyMapReady)return;
-  if(anatomyMapLoading)return anatomyMapLoading;
-  anatomyMapLoading=(async()=>{
-    try{
-      const response=await fetch("muscle-map.svg");
-      if(!response.ok)throw new Error("HTTP "+response.status);
-      host.innerHTML=await response.text();
-      const svg=host.querySelector("svg");
-      if(!svg)throw new Error("Fargelaget mangler");
-      svg.setAttribute("preserveAspectRatio","none");
-      anatomyMapReady=true;
-      updateAnatomyColors(window.latestMuscleProgress||[]);
-    }catch(error){
-      console.error("Could not load muscle color overlay:",error);
-      host.innerHTML="";
-    }
-  })();
-  return anatomyMapLoading;
-}
-function updateAnatomyColors(progress){
-  window.latestMuscleProgress=progress;
-  const host=document.getElementById("anatomyMap");
-  if(!host)return;
-  const svg=host.querySelector("svg");
-  if(!svg)return;
-  const byMuscle=new Map(progress.map(item=>[item.muscle,item.change]));
-  svg.querySelectorAll("[data-muscle]").forEach(group=>{
-    const muscle=group.getAttribute("data-muscle");
-    const change=byMuscle.has(muscle)?byMuscle.get(muscle):null;
-    const key=anatomyClass(change);
-    group.querySelectorAll("path,polygon").forEach(path=>{
-      path.style.fill=anatomyPalette[key];
-      path.style.opacity=change===null?"0.58":"1";
-    });
-    group.setAttribute("data-progress",key);
-    group.setAttribute("aria-label",muscle+": "+(change===null?"ikke nok data":(change>0?"+":"")+change.toFixed(1)+" prosent"));
-  });
-}
 function completedSetMetrics(entry){
   const sets=(entry?.sets||[]).filter(s=>s.done && Number(s.load)>0 && Number(s.reps)>0);
   if(!sets.length)return null;
@@ -389,8 +338,6 @@ function renderMuscleProgressChart(){
     if(!perExercise.length)return {muscle,change:null,sources:[]};
     return {muscle,change:perExercise.reduce((sum,x)=>sum+x.change,0)/perExercise.length,sources:perExercise.map(x=>x.exercise)};
   });
-  updateAnatomyColors(perMuscle);
-  loadAnatomyMap();
   const classFor=change=>change>=20?"muscle-top":change>=10?"muscle-good":change>=3?"muscle-moderate":change>-3?"muscle-stable":"muscle-down";
   const labelFor=change=>change>=20?"Svært stor framgang":change>=10?"Stor framgang":change>=3?"Moderat framgang":change>-3?"Stabil":"Tilbakegang";
   const measured=perMuscle.filter(x=>x.change!==null).sort((a,b)=>b.change-a.change);

@@ -168,3 +168,8 @@
 /* v3.1: make a carried-forward progression recommendation visible */
 .coach-tip:has(strong:first-child){border-left-width:4px}
 .coach-tip strong{font-weight:750}
+
+/* v3.2: clean, unobstructed realistic anatomy image */
+.anatomy-map{width:100%;max-width:560px;margin:8px auto 0;display:block;min-height:0}
+.anatomy-illustration{display:block;width:100%;height:auto;border-radius:12px}
+.anatomy-art,.anatomy-color-overlay{display:none!important}
