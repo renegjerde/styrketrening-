@@ -297,26 +297,35 @@ function finishWorkout(){
   });
   saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;updateWorkoutDock("homeView");setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
 }
+function completedSetMetrics(entry){
+  const sets=(entry?.sets||[]).filter(s=>s.done && Number(s.load)>0 && Number(s.reps)>0);
+  if(!sets.length)return null;
+  const e1rmValues=sets.map(s=>Number(s.load)*(1+Number(s.reps)/30));
+  return {
+    e1rm:Math.max(...e1rmValues),
+    load:Math.max(...sets.map(s=>Number(s.load))),
+    reps:Math.max(...sets.map(s=>Number(s.reps))),
+    volume:sets.reduce((sum,s)=>sum+Number(s.load)*Number(s.reps),0)
+  };
+}
+function smoothedChange(points){
+  if(points.length<2)return null;
+  const n=Math.min(3,Math.floor(points.length/2));
+  const baseline=points.slice(0,n).reduce((s,p)=>s+p.e1rm,0)/n;
+  const recent=points.slice(-n).reduce((s,p)=>s+p.e1rm,0)/n;
+  return baseline>0?((recent-baseline)/baseline)*100:null;
+}
 function renderMuscleProgressChart(){
   const chart=document.getElementById("muscleProgressChart");
   if(!chart)return;
-  // Keep the complete program muscle map visible, including groups without enough
-  // repeated measurements yet. Secondary muscles are included by the exercise mapping.
   const muscles=["Skuldre","Bryst","Rygg","Biceps","Triceps","Core","Bein","Sete"];
   const workouts=chronologicalHistory().slice(-10);
   const perMuscle=muscles.map(muscle=>{
     const perExercise=exercises.filter(ex=>Array.isArray(ex.muscles)&&ex.muscles.includes(muscle)).map(ex=>{
-      const entries=workouts.map(w=>workoutExerciseEntry(w,ex.id))
-        .filter(entry=>entry && Array.isArray(entry.sets) && entry.sets.length);
-      if(entries.length<2)return null;
-      const score=entry=>{
-        const valid=entry.sets.filter(s=>(Number(s.load)||0)>0 && (Number(s.reps)||0)>0);
-        if(!valid.length)return null;
-        return Math.max(...valid.map(s=>(Number(s.load)||0)*(1+(Number(s.reps)||0)/30)));
-      };
-      const first=score(entries[0]),last=score(entries[entries.length-1]);
-      if(first===null||last===null||first<=0)return null;
-      return {change:((last-first)/first)*100,exercise:ex.name};
+      const points=workouts.map(w=>completedSetMetrics(workoutExerciseEntry(w,ex.id))).filter(Boolean);
+      if(points.length<2)return null;
+      const change=smoothedChange(points);
+      return change===null?null:{change,exercise:ex.name};
     }).filter(Boolean);
     if(!perExercise.length)return {muscle,change:null,sources:[]};
     return {muscle,change:perExercise.reduce((sum,x)=>sum+x.change,0)/perExercise.length,sources:perExercise.map(x=>x.exercise)};
@@ -327,29 +336,32 @@ function renderMuscleProgressChart(){
   const missing=perMuscle.filter(x=>x.change===null);
   chart.innerHTML=measured.map(v=>{
     const width=Math.max(3,Math.min(100,Math.abs(v.change)/25*100));
-    const cls=classFor(v.change);
-    return `<div class="muscle-progress-row ${cls}"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${width}%"></div></div><span class="muscle-progress-value">${v.change>0?"+":""}${v.change.toFixed(1)}%</span><small class="muscle-progress-status">${labelFor(v.change)} · ${escapeHtml(v.sources.join(", "))}</small></div>`;
+    return `<div class="muscle-progress-row ${classFor(v.change)}"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${width}%"></div></div><span class="muscle-progress-value">${v.change>0?"+":""}${v.change.toFixed(1)}%</span><small class="muscle-progress-status">${labelFor(v.change)} · ${escapeHtml(v.sources.join(", "))}</small></div>`;
   }).join("")+missing.map(v=>
-    `<div class="muscle-progress-row muscle-stable muscle-no-data"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:0%"></div></div><span class="muscle-progress-value">—</span><small class="muscle-progress-status">Ikke nok data · krever minst 2 registrerte økter med samme øvelse</small></div>`
+    `<div class="muscle-progress-row muscle-stable muscle-no-data"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:0%"></div></div><span class="muscle-progress-value">—</span><small class="muscle-progress-status">Ikke nok data · minst 2 økter med fullførte sett</small></div>`
   ).join("");
-  if(!measured.length){
-    chart.innerHTML='<p class="muscle-progress-empty">Alle muskelgruppene vises under, men det er ennå ikke nok gjentatte registreringer til å beregne styrkeutvikling.</p>'+chart.innerHTML;
-  }
+  if(!measured.length)chart.innerHTML='<p class="muscle-progress-empty">Det er ennå ikke nok fullførte sett i gjentatte økter til å beregne estimert styrkeutvikling.</p>'+chart.innerHTML;
 }
 function renderProgress(){
   renderMuscleProgressChart();
   document.getElementById("progressWorkouts").textContent=history.length;
   document.getElementById("progressVolume").textContent=fmtNum(history.reduce((s,w)=>s+(w.volume||0),0));
-  const filter=document.getElementById("muscleFilter").value;const box=document.getElementById("progressCards");box.innerHTML="";
+  const filter=document.getElementById("muscleFilter").value;
+  const box=document.getElementById("progressCards");box.innerHTML="";
   const matching=exercises.filter(e=>filter==="Alle"||e.muscles.includes(filter));
   if(!matching.length){box.innerHTML='<div class="empty-state">Ingen øvelser i denne muskelgruppen ennå.</div>';return;}
-  // Use chronological order for every progression curve, including backfilled sessions.
   const chronological=chronologicalHistory();
   matching.forEach(ex=>{
-    const points=chronological.map(w=>{const found=w.exercises.find(x=>x.id===ex.id);if(!found)return null;return Math.max(...found.sets.map(s=>Number(s.load)||0));}).filter(v=>v!==null);
-    const currentLoad=points.length?points[points.length-1]:ex.weight;
+    const records=chronological.map(w=>{
+      const metrics=completedSetMetrics(workoutExerciseEntry(w,ex.id));
+      return metrics?{date:w.date,...metrics}:null;
+    }).filter(Boolean);
+    const latest=records.at(-1);
+    const change=smoothedChange(records);
+    const trend=change===null?"For få økter":`${change>0?"+":""}${change.toFixed(1)}% estimert styrke`;
+    const spark=records.length>1?makeSparkline(records.map(p=>p.e1rm)):'<div class="small-muted" style="margin-top:12px">Logg minst to økter med fullførte sett for å se utviklingen.</div>';
     const card=document.createElement("div");card.className="progress-card";
-    card.innerHTML=`<div class="progress-card-top"><div><h3>${escapeHtml(ex.name)}</h3><div class="small-muted">${ex.muscles.join(" · ")} · ${history.length?points.length+" loggede økter":"ikke logget ennå"}</div></div><div class="progress-current">${fmtNum(currentLoad)} kg</div></div>${points.length>1?makeSparkline(points):'<div class="small-muted" style="margin-top:12px">Logg flere økter for å se utviklingskurven.</div>'}`;
+    card.innerHTML=`<div class="progress-card-top"><div><h3>${escapeHtml(ex.name)}</h3><div class="small-muted">${ex.muscles.join(" · ")} · ${records.length} økter med fullførte sett</div></div><div class="progress-current">${latest?fmtNum(latest.e1rm)+" kg e1RM":"—"}</div></div><div class="progress-metrics"><span>Belastning: <strong>${latest?fmtNum(latest.load)+" kg":"—"}</strong></span><span>Reps: <strong>${latest?latest.reps:"—"}</strong></span><span>Volum siste økt: <strong>${latest?fmtNum(latest.volume)+" kg":"—"}</strong></span></div><div class="progress-trend">${trend}</div>${spark}`;
     box.appendChild(card);
   });
 }

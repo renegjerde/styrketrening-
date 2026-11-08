@@ -91,3 +91,12 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Muskeloversikten viser nå alle åtte muskelgruppene fra treningsprogrammet: skuldre, bryst, rygg, biceps, triceps, core, bein og sete.
 - Muskelgrupper uten nok historikk skjules ikke lenger; de vises med «Ikke nok data».
 - Hver beregnet muskelgruppe viser hvilke øvelser som ligger til grunn, slik at koblingen mellom øvelser og muskelgrupper er etterprøvbar.
+
+
+## Versjon 2.8 – styrkeprogresjon med e1RM
+- Hovedindikator for styrke er nå estimert 1RM (Epley): belastning × (1 + repetisjoner / 30).
+- Bare sett markert som fullført og med positiv belastning/repetisjoner inngår.
+- Progresjon glattes ved å sammenligne gjennomsnittet av de siste 2–3 øktene med de foregående 2–3 øktene (minst to økter kreves).
+- Muskelgrupper får gjennomsnittlig prosentvis e1RM-utvikling på tvers av relevante øvelser, slik at en enkelt øvelse ikke alene definerer gruppen.
+- Øvelseskort viser e1RM-kurve, siste belastning, repetisjoner og volum for siste registrerte økt.
+- Volum (kg × reps) er sekundær indikator og holdes adskilt fra estimert styrke.

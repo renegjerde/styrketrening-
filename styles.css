@@ -143,3 +143,9 @@
 .muscle-progress-row.muscle-no-data .muscle-progress-track{opacity:.55}
 .muscle-progress-row.muscle-no-data .muscle-progress-value{color:#94a3b8}
 .muscle-progress-status{line-height:1.35}
+
+/* v2.8: explain and separate strength estimate from training volume */
+.progress-metrics{display:flex;flex-wrap:wrap;gap:6px 13px;margin-top:9px;color:#9aa8bd;font-size:11px}
+.progress-metrics strong{color:#e7edf7;font-weight:650}
+.progress-trend{margin-top:8px;font-size:12px;font-weight:700;color:#c8f169}
+.progress-card .sparkline{margin-top:8px}
