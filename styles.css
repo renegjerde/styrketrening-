@@ -111,42 +111,35 @@
 .workout-dock-arrow{font-size:18px;color:#c8f169}
 @media(max-width:420px){.workout-dock{padding:10px 12px}.workout-dock-copy strong{font-size:11px}}
 
-/* v2.6: fit the complete workout controls on a typical iPhone screen */
+
+/* v2.7: balanced workout sizing – larger controls while keeping navigation visible */
 @media(max-width:500px){
-  body.workout-mode .topbar{display:none}
-  body.workout-mode .app-shell{padding-top:8px}
-  body.workout-mode #workoutView{padding-top:2px}
-  body.workout-mode .view-head{margin:0 0 6px}
-  body.workout-mode .workout-title .eyebrow{font-size:8px;margin-bottom:2px}
-  body.workout-mode .workout-title h2{font-size:22px;line-height:1.02;margin:0 0 2px}
-  body.workout-mode .workout-title .muted{font-size:11px;line-height:1.1}
-  body.workout-mode .exercise-progress{margin:7px 0 7px}
-  body.workout-mode .load-card{padding:8px 12px;border-radius:13px}
-  body.workout-mode .load-card .eyebrow{font-size:9px}
-  body.workout-mode .load-value{font-size:27px;line-height:1}
-  body.workout-mode .load-controls button{width:32px;height:32px}
-  body.workout-mode .sets-card{padding:9px 11px;margin-top:7px;border-radius:13px}
-  body.workout-mode .sets-header{margin-bottom:5px}
-  body.workout-mode .sets-header h3{font-size:15px}
-  body.workout-mode .set-row{padding:4px 0;gap:5px;grid-template-columns:22px minmax(0,1fr) 68px 30px}
-  body.workout-mode .set-row label{font-size:9px;line-height:1}
-  body.workout-mode .set-row input{padding:5px 4px;font-size:11px;min-height:28px}
-  body.workout-mode .set-row label .rep-control{margin-top:3px}
-  body.workout-mode .rep-control button{width:20px;height:26px;font-size:14px}
-  body.workout-mode .set-check{width:28px;height:28px}
-  body.workout-mode .rest-panel{padding:7px 11px;margin-top:7px;border-radius:13px}
-  body.workout-mode .rest-panel .timer{font-size:21px;margin-top:0}
-  body.workout-mode .rest-panel .secondary-button{padding:7px 10px}
-  body.workout-mode .coach-tip{padding:7px 9px;margin-top:7px;font-size:9px;line-height:1.25}
-  body.workout-mode .hold-toggle{font-size:10px;line-height:1.2;margin:6px 0 3px;gap:7px}
-  body.workout-mode .hold-toggle input{width:15px;height:15px}
-  body.workout-mode .workout-actions{margin-top:7px;gap:6px}
-  body.workout-mode .workout-actions button{padding:9px 9px;font-size:11px;min-height:38px}
-  body.workout-mode .finish-button{margin-top:4px;padding:5px;font-size:10px}
+  body.workout-mode .topbar{display:block}
+  body.workout-mode .app-shell{padding-top:10px}
+  body.workout-mode .view-head{margin-bottom:9px}
+  body.workout-mode .workout-title h2{font-size:25px;line-height:1.08}
+  body.workout-mode .workout-title .muted{font-size:13px}
+  body.workout-mode .exercise-progress{margin:11px 0 10px;height:4px}
+  body.workout-mode .load-card{padding:11px 15px}
+  body.workout-mode .load-value{font-size:32px}
+  body.workout-mode .load-controls button{width:38px;height:38px}
+  body.workout-mode .sets-card{padding:12px 13px;margin-top:10px}
+  body.workout-mode .sets-header h3{font-size:17px}
+  body.workout-mode .set-row{padding:6px 0;gap:6px;grid-template-columns:25px minmax(0,1fr) 75px 32px}
+  body.workout-mode .set-row label{font-size:10px}
+  body.workout-mode .set-row input{padding:7px 5px;font-size:12px;min-height:32px}
+  body.workout-mode .rep-control button{width:24px;height:30px;font-size:16px}
+  body.workout-mode .set-check{width:31px;height:31px}
+  body.workout-mode .rest-panel{padding:10px 13px;margin-top:9px}
+  body.workout-mode .rest-panel .timer{font-size:24px}
+  body.workout-mode .rest-panel .secondary-button{padding:9px 12px}
+  body.workout-mode .coach-tip{padding:9px 11px;margin-top:9px;font-size:10px;line-height:1.35}
+  body.workout-mode .hold-toggle{font-size:11px;margin:9px 0 5px}
+  body.workout-mode .workout-actions{margin-top:9px;gap:8px}
+  body.workout-mode .workout-actions button{padding:11px 12px;font-size:12px;min-height:43px}
+  body.workout-mode .finish-button{margin-top:7px;padding:7px;font-size:11px}
 }
-@media(max-width:500px) and (max-height:900px){
-  body.workout-mode .sets-card{padding-top:7px;padding-bottom:7px}
-  body.workout-mode .set-row{padding:3px 0}
-  body.workout-mode .coach-tip{font-size:8.5px}
-  body.workout-mode .workout-actions{margin-top:5px}
-}
+
+.muscle-progress-row.muscle-no-data .muscle-progress-track{opacity:.55}
+.muscle-progress-row.muscle-no-data .muscle-progress-value{color:#94a3b8}
+.muscle-progress-status{line-height:1.35}

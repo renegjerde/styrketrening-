@@ -84,3 +84,10 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Reduserer høyde og mellomrom i belastningskort, settliste, pausekort og instruksjon.
 - Beholder alle felt og knapper, men gjør kontrollene tettere slik at «Neste øvelse» får plass på iPhone.
 - Kompakt modus aktiveres bare på treningssiden og små skjermer.
+
+
+## Versjon 2.7 – balansert treningsvisning og komplett muskeloversikt
+- Justerte treningssiden opp fra den for kompakte v2.6-størrelsen. Topptekst, øvelsesnavn, settfelt, pausekort og knapper er større igjen, samtidig som navigasjonsknappene beholdes synlige.
+- Muskeloversikten viser nå alle åtte muskelgruppene fra treningsprogrammet: skuldre, bryst, rygg, biceps, triceps, core, bein og sete.
+- Muskelgrupper uten nok historikk skjules ikke lenger; de vises med «Ikke nok data».
+- Hver beregnet muskelgruppe viser hvilke øvelser som ligger til grunn, slik at koblingen mellom øvelser og muskelgrupper er etterprøvbar.
