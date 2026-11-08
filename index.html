@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101827">
   <title>Styrkeloggen</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=3.2">
+  <link rel="stylesheet" href="styles.css?v=3.3">
 </head>
 <body>
   <div class="app-shell">
@@ -48,7 +48,7 @@
         <div class="muscle-progress-panel"><p class="eyebrow">SISTE 10 ØKTER</p><h3>Muskelgruppenes progresjon</h3><p class="muted">Hovedmålet er estimert 1RM (e1RM), beregnet fra belastning og repetisjoner i fullførte sett. Vi sammenligner gjennomsnittet av de siste 2–3 øktene med de foregående 2–3. Treningsvolum vises separat. Dette er et styrkeestimat – ikke en direkte måling av muskelvekst.</p><div class="anatomy-illustration-panel">
           <div class="anatomy-illustration-heading"><span class="eyebrow">MUSKELKART · ILLUSTRASJON</span><span class="static-tag">Front + bakside</span></div>
           <div id="anatomyMap" class="anatomy-map">
-            <img class="anatomy-illustration" src="muscle-anatomy-illustration.jpg" alt="Detaljert anatomisk muskelillustrasjon, forfra og bakfra" loading="lazy">
+            <img class="anatomy-illustration anatomy-reference" src="https://upload.wikimedia.org/wikipedia/commons/e/ef/Muscles_front_and_back.svg" alt="Anatomisk illustrasjon av menneskets overflatiske muskler, forfra og bakfra, basert på OpenStax" loading="lazy" referrerpolicy="no-referrer"><p class="anatomy-source">Anatomisk grunnillustrasjon: OpenStax, bearbeidet av Tomáš Kebert / umimeto.org. CC BY-SA 4.0. <a href="https://commons.wikimedia.org/wiki/File:Muscles_front_and_back.svg" target="_blank" rel="noopener">Kilde og lisens</a>.</p>
           </div>
           <p class="muted anatomy-illustration-note">Fargene på hver muskelgruppe følger estimert styrkeutvikling (e1RM) fra dine registrerte økter. Grå betyr at det ikke finnes nok data.</p>
           <div class="progress-color-legend" aria-label="Fargeskala for progresjon">
@@ -82,6 +82,6 @@
   <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=3.2"></script>
+  <script src="app.js?v=3.3"></script>
 </body>
 </html>

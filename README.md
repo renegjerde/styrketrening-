@@ -132,3 +132,11 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Muskelgruppenes progresjon vises fortsatt i fargede målere under illustrasjonen.
 - Beholder anbefalt belastning fra forrige økt (v3.1).
 - Individuell fargelegging av muskler er satt på pause til vi har anatomisk presise masker som er tilpasset selve bildet.
+
+
+## Versjon 3.3 – anatomisk referanse fra OpenStax
+- Bytter ut den AI-genererte kroppsillustrasjonen med en anatomisk muskelillustrasjon basert på OpenStax Anatomy & Physiology, redrawn by Tomáš Kebert / umimeto.org.
+- Kilde: Wikimedia Commons, `Muscles front and back.svg`.
+- Lisens: Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0); kilde og lisens er oppgitt i appen.
+- Illustrasjonen viser muskulaturen forfra og bakfra med faglig anatomisk referanse. Den er en visuell oversikt, ikke et individuelt målekart.
+- Dynamisk fargelegging av enkeltmuskler er ikke aktivert. Progresjonstall og fargede målere vises separat, slik at appen ikke hevder å fargelegge anatomiske områder den ikke kan identifisere presist.
