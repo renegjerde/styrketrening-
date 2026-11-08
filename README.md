@@ -50,3 +50,16 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Viser egen melding hvis selve 3D-modulen ikke kan lastes fra CDN.
 - Fortsatt avhengig av internett for eksterne Three.js-moduler og Écorché-modellen.
 - Progresjonsfargene på 3D-muskler er ikke ferdig koblet til historikken i denne versjonen.
+
+
+## Versjon 2.2 – anatomisk illustrasjon og progresjonsfarger
+- Fjernet den eksterne interaktive 3D-modellen fra progresjonssiden.
+- La inn en lokal front-/bakside anatomisk illustrasjon (JPG), slik at den ikke må lastes fra en ekstern 3D-server.
+- Progresjonsrader bruker nå: rød (tilbakegang), grå (stabil), blå (moderat, +3–9,9 %), grønn (stor, +10–19,9 %), lime (svært stor, +20 % eller mer).
+- Progresjonstallene er fortsatt estimert styrkeutvikling fra registrerte økter. Illustrasjonsfargene er kun en generell visuell referanse, ikke individuelle muskelmålinger.
+
+
+## Versjon 2.3 – start treningsøkt
+- Startknappen åpner treningsvisningen før forsøket på å lagre pågående økt.
+- Feil ved lokal lagring skal ikke lenger blokkere starten; brukeren får en synlig beskjed.
+- Startknappens handler fanger uventede feil og viser en melding i stedet for å feile stille.

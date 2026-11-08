@@ -27,8 +27,7 @@ if(viewport){
  function resize(){const w=viewport.clientWidth||320,h=viewport.clientHeight||430;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();}
  new ResizeObserver(resize).observe(viewport);resize();
  loader.load(modelUrl,gltf=>{
-  clearTimeout(loadTimer);
-  root=gltf.scene;scene.add(root);
+  clearTimeout(loadTimer);\n  root=gltf.scene;scene.add(root);
   root.traverse(o=>{if(!o.isMesh)return;const layer=o.userData.layer||"";if(layer==="skeleton")o.visible=showSkeleton;
     if(layer==="superficial muscles"||layer==="deep muscles"){o.material=o.material.clone();o.material.side=THREE.DoubleSide;}
   });

@@ -22,7 +22,17 @@ function loadData(){
   try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");if(d.settings)settings={...settings,...d.settings};if(d.exercises?.length)exercises=d.exercises;if(d.history)history=d.history;}catch(e){}
 }
 function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify({settings,exercises,history}));}
-function saveSession(){if(session){localStorage.setItem(STORAGE_KEY+"_session",JSON.stringify({session,currentIndex}));}else{localStorage.removeItem(STORAGE_KEY+"_session");}}
+function saveSession(){
+  try{
+    if(session){localStorage.setItem(STORAGE_KEY+"_session",JSON.stringify({session,currentIndex}));}
+    else{localStorage.removeItem(STORAGE_KEY+"_session");}
+    return true;
+  }catch(error){
+    console.warn("Could not persist active workout:",error);
+    showToast("Økten startet, men kunne ikke lagres lokalt. Kontroller lagringsplassen i nettleseren.");
+    return false;
+  }
+}
 function loadSession(){try{const raw=localStorage.getItem(STORAGE_KEY+"_session");if(!raw)return null;const d=JSON.parse(raw);return d?.session?d:null;}catch(e){return null;}}
 function fmtDate(date){return new Date(date).toLocaleDateString("nb-NO",{day:"numeric",month:"short",year:"numeric"});}
 function chronologicalHistory(){return [...history].sort((a,b)=>new Date(a.date)-new Date(b.date));}
@@ -96,7 +106,11 @@ function startWorkout(chosenDate=null){
   // A date selected from the calendar is saved as that workout's local calendar day.
   const dateValue=chosenDate || new Date().toISOString().slice(0,10);
   session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,hold:false,sets:Array.from({length:3},()=>({load:latestExerciseLoad(e.id,e.weight),reps:settings.targetReps,done:false}))}))};
-  currentIndex=0;saveSession();setView("workoutView");renderExercise();
+  currentIndex=0;
+  // Show the workout immediately; persistence must never block the primary action.
+  setView("workoutView");
+  renderExercise();
+  saveSession();
 }
 function resumeWorkout(){if(!session)return;setView("workoutView");renderExercise();}
 function current(){return session.exercises[currentIndex];}
@@ -163,7 +177,7 @@ function renderMuscleProgressChart(){
   if(!chart)return;
   const map=document.querySelectorAll("#bodyMuscleMap [data-muscle]");
   const muscles=["Skuldre","Bryst","Rygg","Biceps","Triceps","Core","Bein","Sete"];
-  map.forEach(el=>el.classList.remove("muscle-moderate","muscle-good","muscle-top"));
+  map.forEach(el=>el.classList.remove("muscle-down","muscle-stable","muscle-moderate","muscle-good","muscle-top"));
   const workouts=chronologicalHistory().slice(-10);
   if(workouts.length<2){
     chart.innerHTML='<p class="muscle-progress-empty">Ikke nok data ennå. Logg minst to gjennomførte økter for å sammenligne utviklingen.</p>';
@@ -196,14 +210,14 @@ function renderMuscleProgressChart(){
   }
   // Absolute, meaningful thresholds: equal/negative results remain neutral rather than
   // turning every muscle green through a relative rank calculation.
-  const classFor=change=>change>=8?"muscle-top":change>=4?"muscle-good":change>0?"muscle-moderate":"";
+  const classFor=change=>change>=20?"muscle-top":change>=10?"muscle-good":change>=3?"muscle-moderate":change>-3?"muscle-stable":"muscle-down";
   map.forEach(el=>{
     const value=valid.find(x=>x.muscle===el.dataset.muscle);
     if(value){const cls=classFor(value.change);if(cls)el.classList.add(cls);}
   });
-  const labelFor=change=>change>=8?"Størst framgang":change>=4?"God framgang":change>0?"Liten framgang":change===0?"Ingen målbar endring":"Tilbakegang";
+  const labelFor=change=>change>=20?"Svært stor framgang":change>=10?"Stor framgang":change>=3?"Moderat framgang":change>-3?"Stabil":"Tilbakegang";
   chart.innerHTML=valid.sort((a,b)=>b.change-a.change).map(v=>{
-    const width=Math.max(0,Math.min(100,v.change/15*100));
+    const width=Math.max(3,Math.min(100,Math.abs(v.change)/25*100));
     const cls=classFor(v.change);
     return `<div class="muscle-progress-row ${cls}"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${width}%"></div></div><span class="muscle-progress-value">${v.change>0?"+":""}${v.change.toFixed(1)}%</span><small class="muscle-progress-status">${labelFor(v.change)}</small></div>`;
   }).join("");
@@ -245,7 +259,11 @@ function saveSettings(){
 function exportData(){const blob=new Blob([JSON.stringify({settings,exercises,history},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="styrkeloggen-backup.json";a.click();URL.revokeObjectURL(url);}
 function resetData(){if(confirm("Dette sletter all historikk og tilbakestiller appen. Er du sikker?")){localStorage.removeItem(STORAGE_KEY);settings={targetReps:12,restSeconds:180,incrementKg:5};exercises=DEFAULT_EXERCISES.map(x=>({...x}));history=[];renderHome();renderProgress();renderHistory();showToast("Data er nullstilt.");}}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
-document.getElementById("startWorkoutBtn").addEventListener("click",()=>startWorkout());
+document.getElementById("startWorkoutBtn").addEventListener("click",event=>{
+  event.preventDefault();
+  try{startWorkout();}
+  catch(error){console.error("Could not start workout:",error);showToast("Kunne ikke starte økten. Last siden på nytt og prøv igjen.");}
+});
 document.getElementById("resumeWorkoutBtn").addEventListener("click",resumeWorkout);
 document.getElementById("startBackfill").addEventListener("click",()=>{
   const date=document.getElementById("backfillDate").value;

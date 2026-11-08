@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101827">
   <title>Styrkeloggen</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=2.0">
+  <link rel="stylesheet" href="styles.css?v=2.2">
 </head>
 <body>
   <div class="app-shell">
@@ -45,11 +45,17 @@
         <div class="view-head"><p class="eyebrow">UTVIKLING OVER TID</p></div><h2 class="page-title">Progresjon</h2>
         <div class="filter-row"><label for="muscleFilter">Muskelgruppe</label><select id="muscleFilter"><option value="Alle">Alle</option><option>Skuldre</option><option>Bryst</option><option>Rygg</option><option>Biceps</option><option>Triceps</option><option>Core</option><option>Bein</option><option>Sete</option></select></div>
         <div class="summary-grid progress-summary"><div class="summary-card"><span class="metric" id="progressWorkouts">0</span><span class="metric-label">økter</span></div><div class="summary-card"><span class="metric" id="progressVolume">0</span><span class="metric-label">kg totalt</span></div></div>
-        <div class="muscle-progress-panel"><p class="eyebrow">SISTE 10 ØKTER</p><h3>Muskelgruppenes progresjon</h3><p class="muted">Sammenligner estimert styrkeutvikling i samme øvelse fra første til siste registrering blant de siste 10 øktene. Dette er en treningsindikator – ikke en direkte måling av muskelvekst.</p><div class="anatomy3d-panel">
-          <div class="anatomy3d-toolbar"><span class="eyebrow">INTERAKTIV 3D-MUSKULATUR</span><div class="anatomy3d-actions"><button id="anatomyMuscles" class="active">Muskler</button><button id="anatomyBoth">Muskler + skjelett</button></div></div>
-          <div id="anatomy3dViewport" class="anatomy3d-viewport"><div class="anatomy3d-loading" id="anatomy3dStatus">Laster 3D-modellen …</div></div>
-          <div class="anatomy3d-footer"><span>👆 Dra for å rotere · Knip for å zoome</span><span id="anatomySelected">Velg en muskel</span></div>
-          <p class="muted anatomy3d-note">Anatomimodell: Écorché · CC BY-SA 4.0 · Én voksen mannlig modell. Fargekobling til treningshistorikken er neste integrasjonssteg; tallene under viser foreløpig beregnet styrkeutvikling.</p>
+        <div class="muscle-progress-panel"><p class="eyebrow">SISTE 10 ØKTER</p><h3>Muskelgruppenes progresjon</h3><p class="muted">Sammenligner estimert styrkeutvikling i samme øvelse fra første til siste registrering blant de siste 10 øktene. Dette er en treningsindikator – ikke en direkte måling av muskelvekst.</p><div class="anatomy-illustration-panel">
+          <div class="anatomy-illustration-heading"><span class="eyebrow">MUSKELKART · ILLUSTRASJON</span><span class="static-tag">Front + bakside</span></div>
+          <img class="anatomy-illustration" src="muscle-anatomy-illustration.jpg" alt="Anatomisk illustrasjon av muskulatur sett forfra og bakfra, med fargelagte muskelgrupper" loading="lazy">
+          <p class="muted anatomy-illustration-note">Illustrasjonen er en visuell referanse. Progresjonstallene under beregnes fra dine registrerte økter; fargene på illustrasjonen er ikke individuelle målinger.</p>
+          <div class="progress-color-legend" aria-label="Fargeskala for progresjon">
+            <span><i class="color-swatch swatch-red"></i>Tilbakegang</span>
+            <span><i class="color-swatch swatch-gray"></i>Stabil</span>
+            <span><i class="color-swatch swatch-blue"></i>Moderat</span>
+            <span><i class="color-swatch swatch-green"></i>Stor</span>
+            <span><i class="color-swatch swatch-lime"></i>Svært stor</span>
+          </div>
         </div>
         <div id="muscleProgressChart" class="muscle-progress-chart"></div></div>
         <div id="progressCards" class="progress-cards"></div>
@@ -68,18 +74,6 @@
     <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=2.1"></script>
-  <script>
-    window.addEventListener("error", function(event) {
-      if (event.target && event.target.tagName === "SCRIPT" && /anatomy3d/.test(event.target.src || "")) {
-        const status = document.getElementById("anatomy3dStatus");
-        if (status) {
-          status.innerHTML = '<div class="anatomy3d-error"><strong>3D-visningen kunne ikke starte</strong><p>En nødvendig 3D-modul ble ikke lastet. Dette kan skyldes nettverk eller blokkering av en ekstern ressurs.</p><button type="button" onclick="location.reload()">Prøv igjen</button></div>';
-          status.style.display = "grid";
-        }
-      }
-    }, true);
-  </script>
-  <script type="module" src="anatomy3d.js?v=2.1"></script>
+  <script src="app.js?v=2.3"></script>
 </body>
 </html>
