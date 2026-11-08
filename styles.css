@@ -155,3 +155,12 @@
 .anatomy-map svg{display:block;width:100%;height:auto;max-height:620px}
 .anatomy-map [data-muscle] path{transition:fill .25s ease,opacity .25s ease}
 .anatomy-loading{padding:36px 12px;text-align:center;color:#9aa8bd;font-size:13px}
+
+/* v3.0: restore detailed anatomical artwork; progression colors are translucent overlays */
+.anatomy-map{width:100%;max-width:560px;margin:8px auto 0;display:block;min-height:0}
+.anatomy-art{position:relative;width:100%;line-height:0;overflow:hidden;border-radius:12px;background:#0b1423}
+.anatomy-art>img{display:block;width:100%;height:auto}
+.anatomy-color-overlay{position:absolute;inset:0;pointer-events:none}
+.anatomy-color-overlay svg{display:block;width:100%;height:100%;overflow:visible}
+.anatomy-color-overlay [data-muscle] path{fill-opacity:.34;stroke:rgba(255,255,255,.58);stroke-width:2;stroke-opacity:.48;stroke-linejoin:round;transition:fill .25s ease,fill-opacity .25s ease}
+.anatomy-color-overlay [data-muscle] path:hover{fill-opacity:.5}

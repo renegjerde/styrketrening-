@@ -309,7 +309,7 @@ function anatomyClass(change){
   return "top";
 }
 async function loadAnatomyMap(){
-  const host=document.getElementById("anatomyMap");
+  const host=document.getElementById("anatomyColorOverlay");
   if(!host||anatomyMapReady)return;
   if(anatomyMapLoading)return anatomyMapLoading;
   anatomyMapLoading=(async()=>{
@@ -318,13 +318,13 @@ async function loadAnatomyMap(){
       if(!response.ok)throw new Error("HTTP "+response.status);
       host.innerHTML=await response.text();
       const svg=host.querySelector("svg");
-      if(!svg)throw new Error("SVG mangler");
-      svg.setAttribute("preserveAspectRatio","xMidYMid meet");
+      if(!svg)throw new Error("Fargelaget mangler");
+      svg.setAttribute("preserveAspectRatio","none");
       anatomyMapReady=true;
       updateAnatomyColors(window.latestMuscleProgress||[]);
     }catch(error){
-      console.error("Could not load anatomical map:",error);
-      host.innerHTML='<p class="anatomy-loading">Muskelkartet kunne ikke lastes. Last siden på nytt.</p>';
+      console.error("Could not load muscle color overlay:",error);
+      host.innerHTML="";
     }
   })();
   return anatomyMapLoading;
@@ -340,7 +340,7 @@ function updateAnatomyColors(progress){
     const muscle=group.getAttribute("data-muscle");
     const change=byMuscle.has(muscle)?byMuscle.get(muscle):null;
     const key=anatomyClass(change);
-    group.querySelectorAll("path").forEach(path=>{
+    group.querySelectorAll("path,polygon").forEach(path=>{
       path.style.fill=anatomyPalette[key];
       path.style.opacity=change===null?"0.58":"1";
     });

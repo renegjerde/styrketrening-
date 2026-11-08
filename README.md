@@ -108,3 +108,11 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Fargene oppdateres direkte fra e1RM-prosentene i muskeloversikten: rød (< -3 %), grå (-3 til +3 %), blå (+3 til +10 %), grønn (+10 til +20 %), lime (>= +20 %).
 - Muskelgrupper uten tilstrekkelig historikk vises i dempet grå.
 - SVG-filen ligger lokalt i prosjektet og krever ikke ekstern 3D-tjeneste.
+
+
+## Versjon 3.0 – realistisk muskelillustrasjon med dynamiske fargelag
+- Gjeninnfører den detaljerte anatomiske illustrasjonen fra tidligere versjon som hovedbilde.
+- Fjerner den stiliserte piktogramfiguren fra visningen.
+- Legger et separat SVG-fargelag over bildet, med gjennomsiktige former for skuldre, bryst, rygg, biceps, triceps, core, bein og sete.
+- Fargene følger de samme e1RM-tersklene som progresjonsoversikten, men den anatomiske illustrasjonen og dens detaljer beholdes synlige under fargene.
+- Fargelagene er lokale filer og krever ingen eksterne tjenester.
