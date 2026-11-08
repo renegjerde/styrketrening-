@@ -116,3 +116,11 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Legger et separat SVG-fargelag over bildet, med gjennomsiktige former for skuldre, bryst, rygg, biceps, triceps, core, bein og sete.
 - Fargene følger de samme e1RM-tersklene som progresjonsoversikten, men den anatomiske illustrasjonen og dens detaljer beholdes synlige under fargene.
 - Fargelagene er lokale filer og krever ingen eksterne tjenester.
+
+
+## Versjon 3.1 – anbefalt belastning i neste økt
+- Når siste lagrede økt gir én kvalifisert progresjonsanbefaling, starter neste ordinære økt med den anbefalte belastningen på den aktuelle øvelsen.
+- Anbefalingen vises tydelig i treningsbildets fokusfelt med forrige og ny belastning.
+- Øvrige øvelser starter med sist registrerte belastning.
+- Historiske økter som legges inn via kalender får ikke automatisk fremtidig anbefaling.
+- Brukeren kan fortsatt justere belastningen manuelt før eller under økten.

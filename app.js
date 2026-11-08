@@ -190,7 +190,14 @@ function returnToWorkout(){
 function startWorkout(chosenDate=null){
   // A date selected from the calendar is saved as that workout's local calendar day.
   const dateValue=chosenDate || new Date().toISOString().slice(0,10);
-  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>({id:e.id,name:e.name,muscles:e.muscles,hold:false,sets:Array.from({length:3},()=>({load:latestExerciseLoad(e.id,e.weight),reps:settings.targetReps,done:false}))}))};
+  const isNewCurrentWorkout=!chosenDate || chosenDate===new Date().toISOString().slice(0,10);
+  const suggestedIncrease=isNewCurrentWorkout?recommendOneIncrease():null;
+  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>{
+    const baseLoad=latestExerciseLoad(e.id,e.weight);
+    const applyIncrease=!!suggestedIncrease&&suggestedIncrease.exercise.id===e.id;
+    const startLoad=applyIncrease?suggestedIncrease.lastLoad+settings.incrementKg:baseLoad;
+    return {id:e.id,name:e.name,muscles:e.muscles,hold:false,recommendedIncrease:applyIncrease?{from:suggestedIncrease.lastLoad,to:startLoad}:null,sets:Array.from({length:3},()=>({load:startLoad,reps:settings.targetReps,done:false}))};
+  })};
   currentIndex=0;
   // Show the workout immediately; persistence must never block the primary action.
   setView("workoutView");
@@ -228,6 +235,7 @@ function renderExercise(){
 function updateCoach(){
   const e=current();const last=e.sets[e.sets.length-1];const tip=document.getElementById("coachTip");
   if(e.hold)tip.innerHTML=`<strong>Hold belastningen:</strong> Du har markert at øvelsen kjentes tung. Ikke anbefal økning her – prioriter kontroll og stabil gjennomføring.`;
+  else if(e.recommendedIncrease)tip.innerHTML=`<strong>Anbefalt økning fra forrige økt:</strong> Belastningen er justert fra ${fmtNum(e.recommendedIncrease.from)} kg til ${fmtNum(e.recommendedIncrease.to)} kg etter forrige økts registreringer. Hvis oppvarmingen kjennes tung eller teknikken svikter, kan du redusere igjen.`;
   else if(last.reps>settings.targetReps)tip.innerHTML=`<strong>Progresjonsmulighet:</strong> Du har registrert ${last.reps} reps i siste sett – mer enn målet på ${settings.targetReps}. Hvis teknikken var god og dette kjentes kontrollert, vurder ${fmtNum(Number(last.load)+settings.incrementKg)} kg neste gang.`;
   else tip.innerHTML=`<strong>Fokus:</strong> Sikt mot ${settings.targetReps} gode repetisjoner i hvert sett. Når siste sett går over målet med kontroll, vurder en økning på ${settings.incrementKg} kg neste økt.`;
 }
