@@ -63,3 +63,10 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Startknappen åpner treningsvisningen før forsøket på å lagre pågående økt.
 - Feil ved lokal lagring skal ikke lenger blokkere starten; brukeren får en synlig beskjed.
 - Startknappens handler fanger uventede feil og viser en melding i stedet for å feile stille.
+
+
+## Versjon 2.4 – robust lagring på iPhone
+- Beholder localStorage som primærlagring.
+- Hvis Safari avviser skriving (for eksempel ved full kvote), forsøker appen automatisk IndexedDB.
+- Data og pågående økt leses fra IndexedDB dersom localStorage ikke kan brukes.
+- Hvis begge lagringsmekanismene feiler, brukes kun midlertidig minne og appen varsler tydelig.

@@ -18,22 +18,80 @@ let timerRemaining=180;
 let orderEditing=false;
 let dragId=null;
 
-function loadData(){
-  try{const d=JSON.parse(localStorage.getItem(STORAGE_KEY)||"{}");if(d.settings)settings={...settings,...d.settings};if(d.exercises?.length)exercises=d.exercises;if(d.history)history=d.history;}catch(e){}
+const IDB_NAME="styrkeloggen_storage";
+const IDB_STORE="records";
+let storageMode="localStorage";
+let memoryStore={};
+function openWorkoutDB(){
+  return new Promise((resolve,reject)=>{
+    if(!("indexedDB" in window)){reject(new Error("IndexedDB støttes ikke"));return;}
+    const request=indexedDB.open(IDB_NAME,1);
+    request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(IDB_STORE))db.createObjectStore(IDB_STORE);};
+    request.onsuccess=()=>resolve(request.result);
+    request.onerror=()=>reject(request.error||new Error("Kunne ikke åpne IndexedDB"));
+  });
 }
-function saveData(){localStorage.setItem(STORAGE_KEY,JSON.stringify({settings,exercises,history}));}
-function saveSession(){
-  try{
-    if(session){localStorage.setItem(STORAGE_KEY+"_session",JSON.stringify({session,currentIndex}));}
-    else{localStorage.removeItem(STORAGE_KEY+"_session");}
-    return true;
-  }catch(error){
-    console.warn("Could not persist active workout:",error);
-    showToast("Økten startet, men kunne ikke lagres lokalt. Kontroller lagringsplassen i nettleseren.");
-    return false;
+async function idbGet(key){
+  const db=await openWorkoutDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,"readonly"),req=tx.objectStore(IDB_STORE).get(key);
+    req.onsuccess=()=>resolve(req.result??null);req.onerror=()=>reject(req.error);
+    tx.oncomplete=()=>db.close();tx.onerror=()=>{db.close();reject(tx.error);};
+  });
+}
+async function idbSet(key,value){
+  const db=await openWorkoutDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,"readwrite");tx.objectStore(IDB_STORE).put(value,key);
+    tx.oncomplete=()=>{db.close();resolve(true);};tx.onerror=()=>{db.close();reject(tx.error);};tx.onabort=()=>{db.close();reject(tx.error);};
+  });
+}
+async function idbDelete(key){
+  const db=await openWorkoutDB();
+  return new Promise((resolve,reject)=>{
+    const tx=db.transaction(IDB_STORE,"readwrite");tx.objectStore(IDB_STORE).delete(key);
+    tx.oncomplete=()=>{db.close();resolve(true);};tx.onerror=()=>{db.close();reject(tx.error);};
+  });
+}
+async function readStored(key){
+  try{const value=localStorage.getItem(key);if(value!==null)return JSON.parse(value);}catch(error){console.warn("localStorage read failed; trying IndexedDB",error);}
+  try{return await idbGet(key);}catch(error){console.warn("IndexedDB read failed",error);return memoryStore[key]??null;}
+}
+async function writeStored(key,value){
+  const serialized=JSON.stringify(value);
+  try{localStorage.setItem(key,serialized);storageMode="localStorage";return true;}
+  catch(error){
+    console.warn("localStorage write failed; using IndexedDB",error);
+    try{await idbSet(key,value);storageMode="IndexedDB";return true;}
+    catch(idbError){
+      console.error("Persistent storage unavailable",idbError);
+      memoryStore[key]=value;storageMode="midlertidig minne";return false;
+    }
   }
 }
-function loadSession(){try{const raw=localStorage.getItem(STORAGE_KEY+"_session");if(!raw)return null;const d=JSON.parse(raw);return d?.session?d:null;}catch(e){return null;}}
+async function deleteStored(key){
+  try{localStorage.removeItem(key);return true;}
+  catch(error){try{await idbDelete(key);return true;}catch(e){delete memoryStore[key];return false;}}
+}
+async function loadData(){
+  const d=await readStored(STORAGE_KEY);
+  if(d){if(d.settings)settings={...settings,...d.settings};if(d.exercises?.length)exercises=d.exercises;if(d.history)history=d.history;}
+}
+function saveData(){
+  return writeStored(STORAGE_KEY,{settings,exercises,history}).then(ok=>{
+    if(!ok)showToast("Lagring er begrenset i nettleseren. Eksporter backup før du lukker siden.");
+    return ok;
+  });
+}
+async function saveSession(){
+  if(session){
+    const ok=await writeStored(STORAGE_KEY+"_session",{session,currentIndex});
+    if(!ok)showToast("Økten er startet, men nettleseren tillater bare midlertidig lagring. Eksporter data når økten er lagret.");
+    return ok;
+  }
+  return deleteStored(STORAGE_KEY+"_session");
+}
+async function loadSession(){const d=await readStored(STORAGE_KEY+"_session");return d?.session?d:null;}
 function fmtDate(date){return new Date(date).toLocaleDateString("nb-NO",{day:"numeric",month:"short",year:"numeric"});}
 function chronologicalHistory(){return [...history].sort((a,b)=>new Date(a.date)-new Date(b.date));}
 function latestWorkout(){return chronologicalHistory().at(-1)||null;}
@@ -283,11 +341,15 @@ document.getElementById("muscleFilter").addEventListener("change",renderProgress
 document.getElementById("saveSettings").addEventListener("click",saveSettings);
 document.getElementById("exportData").addEventListener("click",exportData);
 document.getElementById("resetData").addEventListener("click",resetData);
-loadData();
-const savedSession=loadSession();if(savedSession){session=savedSession.session;currentIndex=Math.min(savedSession.currentIndex||0,session.exercises.length-1);}
-document.getElementById("backfillDate").value=new Date().toISOString().slice(0,10);
-document.getElementById("backfillDate").max=new Date().toISOString().slice(0,10);
-document.getElementById("targetReps").value=settings.targetReps;
-document.getElementById("restSeconds").value=settings.restSeconds;
-document.getElementById("incrementKg").value=settings.incrementKg;
-renderHome();
+(async function initializeApp(){
+  await loadData();
+  const savedSession=await loadSession();
+  if(savedSession){session=savedSession.session;currentIndex=Math.min(savedSession.currentIndex||0,session.exercises.length-1);}
+  document.getElementById("backfillDate").value=new Date().toISOString().slice(0,10);
+  document.getElementById("backfillDate").max=new Date().toISOString().slice(0,10);
+  document.getElementById("targetReps").value=settings.targetReps;
+  document.getElementById("restSeconds").value=settings.restSeconds;
+  document.getElementById("incrementKg").value=settings.incrementKg;
+  renderHome();
+  if(storageMode==="IndexedDB")showToast("Lagring bruker sikkerhetskopi i nettleseren (IndexedDB).");
+})();
