@@ -106,6 +106,7 @@ function fmtNum(n){return Math.round(n).toLocaleString("nb-NO");}
 function showToast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2200);}
 function setView(id){
   document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));
+  document.body.classList.toggle("workout-mode",id==="workoutView");
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
   if(id==="progressView")renderProgress();
   if(id==="historyView")renderHistory();

@@ -77,3 +77,10 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - En fast øktlinje vises på andre sider; trykk på den for å gå tilbake til økten.
 - Pauseklokken bruker et sluttidspunkt i stedet for å telle ned ett sekund per intervall, slik at den holder riktig tid ved navigering og når Safari legger siden i bakgrunnen.
 - Pågående pause gjenopprettes fra lagret økt når appen åpnes igjen.
+
+
+## Versjon 2.6 – kompakt treningsvisning
+- Skjuler den store app-toppbaren mens en økt pågår.
+- Reduserer høyde og mellomrom i belastningskort, settliste, pausekort og instruksjon.
+- Beholder alle felt og knapper, men gjør kontrollene tettere slik at «Neste øvelse» får plass på iPhone.
+- Kompakt modus aktiveres bare på treningssiden og små skjermer.
