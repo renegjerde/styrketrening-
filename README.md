@@ -70,3 +70,10 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Hvis Safari avviser skriving (for eksempel ved full kvote), forsøker appen automatisk IndexedDB.
 - Data og pågående økt leses fra IndexedDB dersom localStorage ikke kan brukes.
 - Hvis begge lagringsmekanismene feiler, brukes kun midlertidig minne og appen varsler tydelig.
+
+
+## Versjon 2.5 – navigering under treningsøkt
+- Navigasjonsmenyen kan brukes mens en treningsøkt pågår.
+- En fast øktlinje vises på andre sider; trykk på den for å gå tilbake til økten.
+- Pauseklokken bruker et sluttidspunkt i stedet for å telle ned ett sekund per intervall, slik at den holder riktig tid ved navigering og når Safari legger siden i bakgrunnen.
+- Pågående pause gjenopprettes fra lagret økt når appen åpnes igjen.

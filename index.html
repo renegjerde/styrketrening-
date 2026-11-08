@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101827">
   <title>Styrkeloggen</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=2.2">
+  <link rel="stylesheet" href="styles.css?v=2.5">
 </head>
 <body>
   <div class="app-shell">
@@ -71,9 +71,15 @@
         <div class="settings-card"><h3>Data</h3><p class="muted">Treningshistorikken lagres lokalt i nettleseren på denne enheten.</p><button class="secondary-button" id="exportData">Eksporter backup (JSON)</button><button class="danger-button" id="resetData">Nullstill all treningsdata</button></div>
       </section>
     </main>
-    <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
+    <button id="workoutDock" class="workout-dock" type="button" hidden aria-label="Gå tilbake til pågående treningsøkt">
+    <span class="workout-dock-pulse"></span>
+    <span class="workout-dock-copy"><strong>Treningsøkt pågår</strong><small id="workoutDockExercise">Skulderpress</small></span>
+    <span class="workout-dock-time" id="workoutDockTimer">ØKT PÅGÅR</span>
+    <span class="workout-dock-arrow">↗</span>
+  </button>
+  <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=2.4"></script>
+  <script src="app.js?v=2.5"></script>
 </body>
 </html>

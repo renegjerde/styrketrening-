@@ -104,7 +104,13 @@ function latestExerciseLoad(exerciseId,fallback){
 }
 function fmtNum(n){return Math.round(n).toLocaleString("nb-NO");}
 function showToast(msg){const el=document.getElementById("toast");el.textContent=msg;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2200);}
-function setView(id){document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===id));if(id==="progressView")renderProgress();if(id==="historyView")renderHistory();}
+function setView(id){
+  document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id===id));
+  document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
+  if(id==="progressView")renderProgress();
+  if(id==="historyView")renderHistory();
+  updateWorkoutDock(id);
+}
 function totalVolume(items){return items.reduce((sum,e)=>sum+(e.sets||[]).reduce((s,set)=>s+(Number(set.load)||0)*(Number(set.reps)||0),0),0);}
 function workoutExerciseEntry(workout,id){return (workout?.exercises||[]).find(e=>e.id===id)||null;}
 function isEligibleForIncrease(entry){
@@ -160,6 +166,26 @@ function renderHome(){
   renderRecommendation();
 }
 function escapeHtml(str){return String(str).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function updateWorkoutDock(activeView){
+  const dock=document.getElementById("workoutDock");
+  if(!dock)return;
+  dock.hidden=!session;
+  if(!session)return;
+  const exercise=session.exercises?.[currentIndex];
+  document.getElementById("workoutDockExercise").textContent=exercise?.name||"Pågående treningsøkt";
+  document.getElementById("workoutDockTimer").textContent=session.restEndsAt?formatRestRemaining(): "ØKT PÅGÅR";
+  dock.classList.toggle("is-current",activeView==="workoutView");
+}
+function formatRestRemaining(){
+  const remaining=Math.max(0,Math.ceil(((Number(session?.restEndsAt)||0)-Date.now())/1000));
+  const m=Math.floor(remaining/60),s=remaining%60;
+  return `${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+}
+function returnToWorkout(){
+  if(!session)return;
+  setView("workoutView");
+  renderExercise();
+}
 function startWorkout(chosenDate=null){
   // A date selected from the calendar is saved as that workout's local calendar day.
   const dateValue=chosenDate || new Date().toISOString().slice(0,10);
@@ -174,6 +200,7 @@ function resumeWorkout(){if(!session)return;setView("workoutView");renderExercis
 function current(){return session.exercises[currentIndex];}
 function renderExercise(){
   const e=current();if(!e)return;
+  updateWorkoutDock("workoutView");
   document.getElementById("currentExerciseName").textContent=e.name;
   document.getElementById("currentMuscles").textContent=e.muscles.join(" · ");
   document.getElementById("sessionProgress").textContent=`ØVELSE ${currentIndex+1} / ${session.exercises.length}`;
@@ -207,11 +234,50 @@ function changeLoad(delta){const e=current();e.sets.forEach(s=>s.load=Math.max(0
 function nextExercise(){if(currentIndex<session.exercises.length-1){currentIndex++;saveSession();renderExercise();}else showToast("Du er på siste øvelse – avslutt økten når du er klar.");}
 function previousExercise(){if(currentIndex>0){currentIndex--;saveSession();renderExercise();}}
 function startRest(){
-  stopRest();timerRemaining=settings.restSeconds;document.getElementById("restPanel").hidden=false;renderTimer();
-  timerInterval=setInterval(()=>{timerRemaining--;renderTimer();if(timerRemaining<=0){stopRest();document.getElementById("restPanel").hidden=true;showToast("Pausen er ferdig – klar for neste sett!");}},1000);
+  stopRest();
+  timerRemaining=settings.restSeconds;
+  session.restEndsAt=Date.now()+settings.restSeconds*1000;
+  document.getElementById("restPanel").hidden=false;
+  saveSession();
+  renderTimer();
+  timerInterval=setInterval(updateRestClock,250);
 }
-function renderTimer(){const m=Math.floor(timerRemaining/60),s=timerRemaining%60;document.getElementById("timerDisplay").textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;}
+function updateRestClock(){
+  if(!session?.restEndsAt){stopRest();return;}
+  timerRemaining=Math.max(0,Math.ceil((session.restEndsAt-Date.now())/1000));
+  renderTimer();
+  const dockTimer=document.getElementById("workoutDockTimer");
+  if(dockTimer) dockTimer.textContent=timerRemaining>0?formatRestRemaining():"PAUSE FERDIG";
+  if(timerRemaining<=0){
+    session.restEndsAt=null;
+    stopRest();
+    document.getElementById("restPanel").hidden=true;
+    saveSession();
+    updateWorkoutDock(document.querySelector(".view.active")?.id);
+    showToast("Pausen er ferdig – klar for neste sett!");
+  }
+}
+function renderTimer(){
+  const m=Math.floor(timerRemaining/60),s=timerRemaining%60;
+  const display=document.getElementById("timerDisplay");
+  if(display)display.textContent=`${String(m).padStart(2,"0")}:${String(s).padStart(2,"0")}`;
+  const dockTimer=document.getElementById("workoutDockTimer");
+  if(dockTimer)dockTimer.textContent=session?.restEndsAt&&timerRemaining>0?formatRestRemaining():"ØKT PÅGÅR";
+}
 function stopRest(){if(timerInterval){clearInterval(timerInterval);timerInterval=null;}}
+function restoreRestClock(){
+  if(!session?.restEndsAt)return;
+  if(session.restEndsAt>Date.now()){
+    document.getElementById("restPanel").hidden=false;
+    timerRemaining=Math.ceil((session.restEndsAt-Date.now())/1000);
+    renderTimer();
+    timerInterval=setInterval(updateRestClock,250);
+  }else{
+    session.restEndsAt=null;
+    document.getElementById("restPanel").hidden=true;
+    saveSession();
+  }
+}
 function finishWorkout(){
   if(!session)return;
   const completed=session.exercises.filter(e=>e.sets.some(s=>s.done));
@@ -228,7 +294,7 @@ function finishWorkout(){
       ex.weight=Number(se.sets[se.sets.length-1].load)||ex.weight;
     }
   });
-  saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
+  saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;updateWorkoutDock("homeView");setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
 }
 function renderMuscleProgressChart(){
   const chart=document.getElementById("muscleProgressChart");
@@ -317,6 +383,7 @@ function saveSettings(){
 function exportData(){const blob=new Blob([JSON.stringify({settings,exercises,history},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="styrkeloggen-backup.json";a.click();URL.revokeObjectURL(url);}
 function resetData(){if(confirm("Dette sletter all historikk og tilbakestiller appen. Er du sikker?")){localStorage.removeItem(STORAGE_KEY);settings={targetReps:12,restSeconds:180,incrementKg:5};exercises=DEFAULT_EXERCISES.map(x=>({...x}));history=[];renderHome();renderProgress();renderHistory();showToast("Data er nullstilt.");}}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
+document.getElementById("workoutDock").addEventListener("click",returnToWorkout);
 document.getElementById("startWorkoutBtn").addEventListener("click",event=>{
   event.preventDefault();
   try{startWorkout();}

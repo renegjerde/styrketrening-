@@ -98,3 +98,15 @@
 .muscle-progress-row.muscle-good .muscle-progress-value{color:#22c55e}
 .muscle-progress-row.muscle-top .muscle-progress-value{color:#a3e635}
 @media(max-width:420px){.anatomy-illustration{max-width:100%}.progress-color-legend{gap:7px 9px}}
+
+/* v2.5: persistent in-app workout access */
+.workout-dock{position:fixed;z-index:20;left:50%;transform:translateX(-50%);bottom:calc(82px + env(safe-area-inset-bottom));width:min(680px,calc(100% - 28px));display:flex;align-items:center;gap:10px;padding:11px 14px;background:#26364d;border:1px solid #52627a;border-radius:15px;color:#f4f6fb;box-shadow:0 8px 28px rgba(0,0,0,.28);text-align:left}
+.workout-dock[hidden]{display:none}
+.workout-dock.is-current{display:none}
+.workout-dock-pulse{width:9px;height:9px;flex:0 0 9px;border-radius:50%;background:#a3e635;box-shadow:0 0 0 4px rgba(163,230,53,.13)}
+.workout-dock-copy{display:flex;flex:1;min-width:0;flex-direction:column;gap:2px}
+.workout-dock-copy strong{font-size:12px}
+.workout-dock-copy small{font-size:11px;color:#b8c4d8;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.workout-dock-time{font-size:12px;font-weight:700;color:#c8f169;font-variant-numeric:tabular-nums;white-space:nowrap}
+.workout-dock-arrow{font-size:18px;color:#c8f169}
+@media(max-width:420px){.workout-dock{padding:10px 12px}.workout-dock-copy strong{font-size:11px}}
