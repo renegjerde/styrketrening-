@@ -100,3 +100,11 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Muskelgrupper får gjennomsnittlig prosentvis e1RM-utvikling på tvers av relevante øvelser, slik at en enkelt øvelse ikke alene definerer gruppen.
 - Øvelseskort viser e1RM-kurve, siste belastning, repetisjoner og volum for siste registrerte økt.
 - Volum (kg × reps) er sekundær indikator og holdes adskilt fra estimert styrke.
+
+
+## Versjon 2.9 – dynamisk fargekobling til muskelkart
+- Erstatter det flate JPG-bildet med en lokal SVG-anatomisk illustrasjon med separate grupper for skuldre, bryst, rygg, biceps, triceps, core, bein og sete.
+- Front- og bakside-elementer for samme muskelgruppe deler samme progresjonsfarge.
+- Fargene oppdateres direkte fra e1RM-prosentene i muskeloversikten: rød (< -3 %), grå (-3 til +3 %), blå (+3 til +10 %), grønn (+10 til +20 %), lime (>= +20 %).
+- Muskelgrupper uten tilstrekkelig historikk vises i dempet grå.
+- SVG-filen ligger lokalt i prosjektet og krever ikke ekstern 3D-tjeneste.

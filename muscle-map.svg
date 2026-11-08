@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" role="img" aria-labelledby="title desc">
+<title id="title">Anatomisk muskeloversikt, forfra og bakfra</title>
+<desc id="desc">Stilisert anatomisk illustrasjon med separate lag for skuldre, bryst, rygg, biceps, triceps, core, bein og sete.</desc>
+<defs>
+ <linearGradient id="skin" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f1f4f7"/><stop offset=".45" stop-color="#aeb9c7"/><stop offset="1" stop-color="#667487"/></linearGradient>
+ <linearGradient id="muscle" x1="0" y1="0" x2="0.8" y2="1"><stop stop-color="#f8fafc"/><stop offset=".5" stop-color="#aab6c5"/><stop offset="1" stop-color="#64748b"/></linearGradient>
+ <linearGradient id="shade" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#334155"/><stop offset="1" stop-color="#0f172a"/></linearGradient>
+</defs>
+<g fill="none" stroke="#526176" stroke-width="3" opacity=".7">
+ <path d="M80 850H400M500 850H820"/>
+</g>
+<!-- FRONT silhouette -->
+<g id="front" stroke="#64748b" stroke-width="2.5" stroke-linejoin="round">
+ <path fill="url(#skin)" d="M205 105 Q180 115 170 145 L135 165 Q105 178 95 220 L75 340 Q70 365 85 376 Q100 384 110 360 L145 260 L158 370 L145 470 Q140 500 155 520 L165 650 Q165 685 175 715 L165 825 Q165 848 185 850 L205 850 Q220 845 215 820 L230 720 L250 620 L270 720 L285 820 Q280 848 300 850 L320 850 Q340 846 332 820 L325 715 Q335 685 335 650 L345 520 Q360 500 355 470 L342 370 L355 260 L390 360 Q400 384 415 376 Q430 365 425 340 L405 220 Q395 178 365 165 L330 145 Q320 115 295 105 L285 70 L215 70Z"/>
+ <path fill="url(#skin)" d="M215 70 Q215 25 250 20 Q285 25 285 70 L278 112 Q250 135 222 112Z"/>
+ <!-- neck -->
+ <path fill="url(#muscle)" d="M220 105 L220 155 Q250 175 280 155 L280 105 Q250 125 220 105Z"/>
+ <!-- base muscle contours -->
+ <path fill="url(#muscle)" d="M160 175 Q190 150 220 160 L250 180 L280 160 Q310 150 340 175 L322 250 Q300 270 250 260 Q200 270 178 250Z"/>
+ <path fill="url(#muscle)" d="M205 265 Q250 280 295 265 L310 390 Q280 425 250 425 Q220 425 190 390Z"/>
+ <path fill="url(#muscle)" d="M195 430 Q250 455 305 430 L320 500 Q290 530 250 525 Q210 530 180 500Z"/>
+</g>
+<!-- Front shoulder caps -->
+<g id="m-shoulders" data-muscle="Skuldre" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M160 177 Q178 145 220 158 Q242 171 238 205 Q228 242 190 251 Q160 245 148 220Z"/>
+ <path d="M340 177 Q322 145 280 158 Q258 171 262 205 Q272 242 310 251 Q340 245 352 220Z"/>
+</g>
+<!-- Chest -->
+<g id="m-chest" data-muscle="Bryst" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M190 190 Q220 170 247 190 Q250 222 235 252 Q210 266 180 247 Q165 225 190 190Z"/>
+ <path d="M310 190 Q280 170 253 190 Q250 222 265 252 Q290 266 320 247 Q335 225 310 190Z"/>
+</g>
+<!-- Core -->
+<g id="m-core" data-muscle="Core" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M218 270 Q250 280 282 270 L278 405 Q250 425 222 405Z"/>
+ <path d="M225 285 Q250 292 275 285 M223 315 Q250 322 277 315 M222 345 Q250 352 278 345 M220 375 Q250 382 280 375" fill="none" stroke="#526176" stroke-width="3"/>
+ <path d="M185 270 Q205 280 212 310 L205 390 L188 405 Q175 355 185 270Z M315 270 Q295 280 288 310 L295 390 L312 405 Q325 355 315 270Z"/>
+</g>
+<!-- Biceps front -->
+<g id="m-biceps" data-muscle="Biceps" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M133 250 Q150 220 166 235 L177 310 Q172 345 155 358 Q138 340 133 310Z"/>
+ <path d="M367 250 Q350 220 334 235 L323 310 Q328 345 345 358 Q362 340 367 310Z"/>
+</g>
+<!-- Front legs -->
+<g id="m-legs" data-muscle="Bein" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M178 475 Q210 470 240 490 L230 635 Q220 680 195 700 Q170 675 168 625Z"/>
+ <path d="M322 475 Q290 470 260 490 L270 635 Q280 680 305 700 Q330 675 332 625Z"/>
+ <path d="M198 700 Q220 690 240 705 L230 810 Q215 835 190 820Z M302 700 Q280 690 260 705 L270 810 Q285 835 310 820Z"/>
+</g>
+<!-- BACK silhouette -->
+<g id="back" stroke="#64748b" stroke-width="2.5" stroke-linejoin="round">
+ <path fill="url(#skin)" d="M575 105 Q550 115 540 145 L505 165 Q475 178 465 220 L445 340 Q440 365 455 376 Q470 384 480 360 L515 260 L528 370 L515 470 Q510 500 525 520 L535 650 Q535 685 545 715 L535 825 Q535 848 555 850 L575 850 Q590 845 585 820 L600 720 L620 620 L640 720 L655 820 Q650 848 670 850 L690 850 Q710 846 702 820 L695 715 Q705 685 705 650 L715 520 Q730 500 725 470 L712 370 L725 260 L760 360 Q770 384 785 376 Q800 365 795 340 L775 220 Q765 178 735 165 L700 145 Q690 115 665 105 L655 70 L585 70Z"/>
+ <path fill="url(#skin)" d="M585 70 Q585 25 620 20 Q655 25 655 70 L648 112 Q620 135 592 112Z"/>
+ <path fill="url(#muscle)" d="M575 155 Q620 180 665 155 L700 190 Q675 240 620 260 Q565 240 540 190Z"/>
+</g>
+<!-- Back shoulders -->
+<g id="m-shoulders-back" data-muscle="Skuldre" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M535 178 Q555 145 585 160 Q600 180 586 220 Q565 245 535 230 Q520 210 535 178Z"/>
+ <path d="M705 178 Q685 145 655 160 Q640 180 654 220 Q675 245 705 230 Q720 210 705 178Z"/>
+</g>
+<!-- Back / lats + traps -->
+<g id="m-back" data-muscle="Rygg" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M600 155 L620 185 L640 155 Q660 180 665 230 L650 320 Q640 360 620 380 Q600 360 590 320 L575 230 Q580 180 600 155Z"/>
+ <path d="M555 235 Q585 250 600 270 L590 390 Q570 420 545 395 Q535 330 555 235Z"/>
+ <path d="M685 235 Q655 250 640 270 L650 390 Q670 420 695 395 Q705 330 685 235Z"/>
+ <path d="M590 390 Q620 410 650 390 L665 445 Q620 470 575 445Z"/>
+</g>
+<!-- Triceps back of arms -->
+<g id="m-triceps" data-muscle="Triceps" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M500 245 Q520 220 535 245 L548 320 Q540 350 520 360 Q502 335 500 300Z"/>
+ <path d="M740 245 Q720 220 705 245 L692 320 Q700 350 720 360 Q738 335 740 300Z"/>
+</g>
+<!-- Glutes -->
+<g id="m-glutes" data-muscle="Sete" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M550 450 Q585 430 615 455 Q620 500 590 535 Q560 540 540 505Z"/>
+ <path d="M690 450 Q655 430 625 455 Q620 500 650 535 Q680 540 700 505Z"/>
+</g>
+<!-- Back legs hamstrings + calves -->
+<g id="m-legs-back" data-muscle="Bein" fill="#94a3b8" stroke="#e2e8f0" stroke-width="2">
+ <path d="M545 535 Q580 525 610 545 L600 670 Q590 700 570 710 Q545 680 540 625Z"/>
+ <path d="M695 535 Q660 525 630 545 L640 670 Q650 700 670 710 Q695 680 700 625Z"/>
+ <path d="M570 710 Q595 700 615 715 L605 810 Q590 840 565 820Z M670 710 Q645 700 625 715 L635 810 Q650 840 675 820Z"/>
+</g>
+</svg>
