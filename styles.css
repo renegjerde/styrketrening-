@@ -178,3 +178,10 @@
 .anatomy-reference{display:block;width:100%;height:auto;object-fit:contain;background:#f7f8fa;border-radius:12px}
 .anatomy-source{font-size:10px;line-height:1.4;color:#8f9db2;margin:5px 0 8px}
 .anatomy-source a{color:#a9c4e8;text-decoration:underline}
+
+/* v3.4: progress colors are mapped to broad anatomical regions on the sourced illustration */
+.anatomy-artwork{position:relative;width:100%;line-height:0;overflow:hidden;border-radius:12px;background:#f7f8fa}
+.anatomy-artwork .anatomy-reference{display:block;width:100%;height:auto;border-radius:12px}
+.muscle-progress-overlay{position:absolute;inset:0;pointer-events:none}
+.muscle-progress-overlay svg{display:block;width:100%;height:100%;overflow:hidden}
+.muscle-progress-overlay [data-muscle] path{transition:fill .25s ease,fill-opacity .25s ease}

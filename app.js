@@ -323,6 +323,42 @@ function smoothedChange(points){
   const recent=points.slice(-n).reduce((s,p)=>s+p.e1rm,0)/n;
   return baseline>0?((recent-baseline)/baseline)*100:null;
 }
+const muscleProgressColors={down:"#ef4444",stable:"#94a3b8",moderate:"#38bdf8",good:"#22c55e",top:"#a3e635"};
+function muscleProgressKey(change){
+  if(change===null||!Number.isFinite(change))return "stable";
+  if(change < -3)return "down";
+  if(change < 3)return "stable";
+  if(change < 10)return "moderate";
+  if(change < 20)return "good";
+  return "top";
+}
+async function renderMuscleProgressOverlay(progress){
+  const host=document.getElementById("muscleProgressOverlay");
+  if(!host)return;
+  try{
+    if(!host.querySelector("svg")){
+      const response=await fetch("muscle-progress-overlay.svg");
+      if(!response.ok)throw new Error("Overlay HTTP "+response.status);
+      host.innerHTML=await response.text();
+    }
+    const svg=host.querySelector("svg");
+    if(!svg)return;
+    const values=new Map(progress.map(item=>[item.muscle,item.change]));
+    svg.querySelectorAll("[data-muscle]").forEach(group=>{
+      const muscle=group.getAttribute("data-muscle");
+      const change=values.has(muscle)?values.get(muscle):null;
+      const key=muscleProgressKey(change);
+      group.querySelectorAll("path").forEach(path=>{
+        path.style.fill=muscleProgressColors[key];
+        path.style.fillOpacity=change===null?".18":".46";
+      });
+      group.setAttribute("data-progress",key);
+      group.setAttribute("aria-label",muscle+": "+(change===null?"ikke nok data":(change>0?"+":"")+change.toFixed(1)+" prosent"));
+    });
+  }catch(error){
+    console.warn("Muscle progress overlay could not be rendered:",error);
+  }
+}
 function renderMuscleProgressChart(){
   const chart=document.getElementById("muscleProgressChart");
   if(!chart)return;
@@ -338,6 +374,8 @@ function renderMuscleProgressChart(){
     if(!perExercise.length)return {muscle,change:null,sources:[]};
     return {muscle,change:perExercise.reduce((sum,x)=>sum+x.change,0)/perExercise.length,sources:perExercise.map(x=>x.exercise)};
   });
+  window.styrkeloggenMuscleProgress=perMuscle;
+  renderMuscleProgressOverlay(perMuscle);
   const classFor=change=>change>=20?"muscle-top":change>=10?"muscle-good":change>=3?"muscle-moderate":change>-3?"muscle-stable":"muscle-down";
   const labelFor=change=>change>=20?"Svært stor framgang":change>=10?"Stor framgang":change>=3?"Moderat framgang":change>-3?"Stabil":"Tilbakegang";
   const measured=perMuscle.filter(x=>x.change!==null).sort((a,b)=>b.change-a.change);

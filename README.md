@@ -140,3 +140,11 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Lisens: Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0); kilde og lisens er oppgitt i appen.
 - Illustrasjonen viser muskulaturen forfra og bakfra med faglig anatomisk referanse. Den er en visuell oversikt, ikke et individuelt målekart.
 - Dynamisk fargelegging av enkeltmuskler er ikke aktivert. Progresjonstall og fargede målere vises separat, slik at appen ikke hevder å fargelegge anatomiske områder den ikke kan identifisere presist.
+
+
+## Versjon 3.4 – kobling mellom progresjon og anatomikart
+- Legger et transparent, lokalt SVG-lag over OpenStax/Kebert-illustrasjonen.
+- De åtte muskelgruppene (Skuldre, Bryst, Rygg, Biceps, Triceps, Core, Bein, Sete) får farge fra nøyaktig samme beregnede prosentverdi og terskler som progresjonsradene.
+- Ingen data vises dempet grå; negative utviklingstall røde, stabil grå, moderat blå, stor grønn og svært stor lime.
+- Fargelagene er brede anatomiske regioner som er manuelt plassert mot grunnillustrasjonen. De er en pedagogisk oversikt, ikke individuelle muskel-/fibergrenser eller måling av muskelvekst.
+- Beholder treningshistorikk, pauseklokke, navigasjon og anbefalt belastning fra forrige økt.
