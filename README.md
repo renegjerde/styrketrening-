@@ -254,3 +254,11 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Project URL er satt til Familiemat-prosjektet: `https://bukqjuyedqzyribzkcui.supabase.co`.
 - Publishable key er lagt inn i `supabase-config.js`.
 - REST-stien `/rest/v1/` skal ikke legges til Project URL-feltet.
+
+
+## Versjon 3.8.2 – rettet dynamiske tekstmaler
+- Retter feil der JavaScript-interpolering ble escaped i template strings.
+- Øvelsesnavn og muskelgrupper rendres nå som faktiske verdier i «Maksvekt på apparatene».
+- Anbefalingskortet på oversiktssiden rendrer øvelse, kilo og repetisjoner som faktiske verdier.
+- Retter samtidig dato-/øktmalen slik at ny treningsøkt får gyldig dato.
+- Beholder Familiemat-Supabase-konfigurasjonen og 95 kg maksgrense for sittende ryggpress.

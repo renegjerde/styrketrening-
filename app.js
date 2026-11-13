@@ -147,8 +147,8 @@ function recommendOneIncrease(){
 }
 function renderRecommendation(){
  const box=document.getElementById("progressionRecommendation");if(!box)return;const c=recommendOneIncrease();
- if(c&&c.type==="reps")box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKT · ÉN ØVELSE</p><h3>\${escapeHtml(c.exercise.name)}</h3><div class="recommendation-load">\${fmtNum(c.lastLoad)} kg · \${c.target} → \${c.target+1} reps</div><p>Maksvekten på \${fmtNum(c.maxLoad)} kg er nådd. Behold vekten og øk repetisjonene gradvis.</p>`;
- else if(c)box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKT · ÉN ØVELSE</p><h3>\${escapeHtml(c.exercise.name)}</h3><div class="recommendation-load">\${fmtNum(c.lastLoad)} kg → \${fmtNum(Math.min(c.lastLoad+settings.incrementKg,c.maxLoad??Infinity))} kg</div><p><strong>Øk belastningen neste økt.</strong> Alle sett er fullført og repetisjonsmålet er passert.</p>`;
+ if(c&&c.type==="reps")box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKT · ÉN ØVELSE</p><h3>${escapeHtml(c.exercise.name)}</h3><div class="recommendation-load">${fmtNum(c.lastLoad)} kg · ${c.target} → ${c.target+1} reps</div><p>Maksvekten på ${fmtNum(c.maxLoad)} kg er nådd. Behold vekten og øk repetisjonene gradvis.</p>`;
+ else if(c)box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKT · ÉN ØVELSE</p><h3>${escapeHtml(c.exercise.name)}</h3><div class="recommendation-load">${fmtNum(c.lastLoad)} kg → ${fmtNum(Math.min(c.lastLoad+settings.incrementKg,c.maxLoad??Infinity))} kg</div><p><strong>Øk belastningen neste økt.</strong> Alle sett er fullført og repetisjonsmålet er passert.</p>`;
  else box.innerHTML=`<p class="eyebrow">PROGRESJONSVURDERING</p><h3 class="no-increase">Ingen økning anbefales akkurat nå</h3><p>Fullfør alle sett med god teknikk. Ved registrert maksvekt foreslås flere repetisjoner i stedet for mer belastning.</p>`;
 }
 function renderHome(){
@@ -191,7 +191,7 @@ function returnToWorkout(){
 function startWorkout(chosenDate=null){
  const dateValue=chosenDate||new Date().toISOString().slice(0,10),isCurrent=!chosenDate||chosenDate===new Date().toISOString().slice(0,10);
  const suggested=isCurrent?recommendOneIncrease():null;
- session={date:new Date(`\${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>{
+ session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>{
   const base=latestExerciseLoad(e.id,e.weight),apply=!!suggested&&suggested.exercise.id===e.id;
   const load=apply&&suggested.type==="load"?Math.min(suggested.lastLoad+settings.incrementKg,suggested.maxLoad??Infinity):base;
   const reps=apply&&suggested.type==="reps"?suggested.target+1:exerciseTarget(e);
@@ -231,10 +231,10 @@ function updateCoach(){
  const e=current(),last=e.sets.at(-1),tip=document.getElementById("coachTip"),target=Number(e.targetReps)||settings.targetReps;
  const configured=exercises.find(x=>x.id===e.id)||{},max=Number(e.maxLoad)||exerciseMaxLoad(configured),atMax=max!==null&&max!==undefined&&Number(last.load)>=max;
  if(e.hold){tip.className="coach-tip";tip.innerHTML="<strong>HOLD BELASTNINGEN</strong><br>Du har markert øvelsen som tung. Prioriter kontroll – ingen økning anbefales.";}
- else if(e.recommendedIncrease?.type==="reps"){tip.className="coach-tip coach-tip-recommended";tip.innerHTML=`<span class="coach-recommend-label">ANBEFALT NESTE ØKT</span><strong>Øk til \${e.recommendedIncrease.to} repetisjoner per sett</strong><br>Maksvekten på \${fmtNum(max)} kg er nådd. Behold belastningen og øk repetisjonene gradvis.`;}
- else if(e.recommendedIncrease?.type==="load"){tip.className="coach-tip coach-tip-recommended";tip.innerHTML=`<span class="coach-recommend-label">ANBEFALT NESTE ØKT</span><strong>Øk belastningen fra \${fmtNum(e.recommendedIncrease.from)} til \${fmtNum(e.recommendedIncrease.to)} kg</strong><br>Dette er anbefalt etter forrige økt. Reduser igjen hvis teknikken svikter.`;}
- else if(atMax){tip.className="coach-tip coach-tip-max";tip.innerHTML=`<strong>MAKSVEKT NÅDD · \${fmtNum(max)} KG</strong><br>Ikke øk belastningen videre. Sikt mot \${target+1} repetisjoner per sett når du klarer \${target} med god kontroll.`;}
- else{tip.className="coach-tip";tip.innerHTML=`<strong>FOKUS</strong><br>Sikt mot \${target} gode repetisjoner. Når alle sett er fullført og siste sett går over målet, anbefales økt belastning.`;}
+ else if(e.recommendedIncrease?.type==="reps"){tip.className="coach-tip coach-tip-recommended";tip.innerHTML=`<span class="coach-recommend-label">ANBEFALT NESTE ØKT</span><strong>Øk til ${e.recommendedIncrease.to} repetisjoner per sett</strong><br>Maksvekten på ${fmtNum(max)} kg er nådd. Behold belastningen og øk repetisjonene gradvis.`;}
+ else if(e.recommendedIncrease?.type==="load"){tip.className="coach-tip coach-tip-recommended";tip.innerHTML=`<span class="coach-recommend-label">ANBEFALT NESTE ØKT</span><strong>Øk belastningen fra ${fmtNum(e.recommendedIncrease.from)} til ${fmtNum(e.recommendedIncrease.to)} kg</strong><br>Dette er anbefalt etter forrige økt. Reduser igjen hvis teknikken svikter.`;}
+ else if(atMax){tip.className="coach-tip coach-tip-max";tip.innerHTML=`<strong>MAKSVEKT NÅDD · ${fmtNum(max)} KG</strong><br>Ikke øk belastningen videre. Sikt mot ${target+1} repetisjoner per sett når du klarer ${target} med god kontroll.`;}
+ else{tip.className="coach-tip";tip.innerHTML=`<strong>FOKUS</strong><br>Sikt mot ${target} gode repetisjoner. Når alle sett er fullført og siste sett går over målet, anbefales økt belastning.`;}
 }
 function changeLoad(delta){const e=current();e.sets.forEach(s=>s.load=Math.max(0,Number((s.load+delta).toFixed(2))));saveSession();renderExercise();}
 function nextExercise(){if(currentIndex<session.exercises.length-1){currentIndex++;saveSession();renderExercise();}else showToast("Du er på siste øvelse – avslutt økten når du er klar.");}
@@ -514,7 +514,7 @@ function renderHistory(){
 function renderExerciseLimits(){
  const host=document.getElementById("exerciseLimits");if(!host)return;host.innerHTML="";
  exercises.forEach(ex=>{const row=document.createElement("label");row.className="exercise-limit-row";const max=exerciseMaxLoad(ex);
-  row.innerHTML=`<span><strong>\${escapeHtml(ex.name)}</strong><small>\${escapeHtml(ex.muscles.join(" · "))}</small></span><span class="exercise-limit-input"><input type="number" min="0" step="0.5" inputmode="decimal" placeholder="Ingen grense" value="\${max??""}" aria-label="Maksvekt for \${escapeHtml(ex.name)}"><small>kg maks</small></span>`;host.appendChild(row);});
+  row.innerHTML=`<span><strong>${escapeHtml(ex.name)}</strong><small>${escapeHtml(ex.muscles.join(" · "))}</small></span><span class="exercise-limit-input"><input type="number" min="0" step="0.5" inputmode="decimal" placeholder="Ingen grense" value="${max??""}" aria-label="Maksvekt for ${escapeHtml(ex.name)}"><small>kg maks</small></span>`;host.appendChild(row);});
 }
 function saveExerciseLimits(){
  document.querySelectorAll(".exercise-limit-row").forEach((row,i)=>{const ex=exercises[i],raw=row.querySelector("input").value.trim();ex.maxLoad=raw===""?null:Math.max(0,Number(raw)||0);if(ex.maxLoad===0)ex.maxLoad=null;});
