@@ -262,3 +262,12 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Anbefalingskortet på oversiktssiden rendrer øvelse, kilo og repetisjoner som faktiske verdier.
 - Retter samtidig dato-/øktmalen slik at ny treningsøkt får gyldig dato.
 - Beholder Familiemat-Supabase-konfigurasjonen og 95 kg maksgrense for sittende ryggpress.
+
+
+## Versjon 3.8.3 – fungerende muskelgruppefilter
+- Nedtrekksmenyen «Muskelgruppe» styrer nå både øvelseskortene og fremheving i det anatomiske kartet.
+- «Alle» nullstiller filter og viser hele øvelseslisten og alle muskelgruppenes progresjon.
+- Velges en gruppe, fremheves denne i front- og baksidekartet, og øvelseskortene begrenses til øvelser som belaster gruppen.
+- Trykk på en muskelgruppe i progresjonslisten eller på et område i kartet for å velge samme gruppe i nedtrekksmenyen.
+- Valg av samme gruppe igjen via kartet nullstiller til «Alle».
+- En hjelpetekst under menyen viser aktivt filter og hvor mange øvelser som inngår.

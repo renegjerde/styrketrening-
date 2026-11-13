@@ -376,12 +376,24 @@ function updateMuscleFocusUI(){
 }
 function setMuscleFocus(appMuscle){
   selectedMuscleFocus=selectedMuscleFocus===appMuscle?null:appMuscle;
-  const highlights=buildMuscleHighlights(latestMuscleProgress);
-  if(muscleMaps){
-    muscleMaps.front.update({highlights});
-    muscleMaps.back.update({highlights});
+  const selector=document.getElementById("muscleFilter");
+  if(selector)selector.value=selectedMuscleFocus||"Alle";
+  renderProgress();
+}
+function updateMuscleFilterHint(filter){
+  const hint=document.getElementById("muscleFilterHint");
+  if(!hint)return;
+  if(filter==="Alle"){
+    hint.textContent="Viser alle muskelgrupper og øvelser. Velg en gruppe for å filtrere øvelsene og fremheve muskulaturen i kartet.";
+  }else{
+    const count=exercises.filter(ex=>ex.muscles.includes(filter)).length;
+    hint.textContent=`Viser ${count} ${count===1?"øvelse":"øvelser"} knyttet til ${filter}. Muskelkartet fremhever samme gruppe. Trykk på gruppen igjen i kartet eller velg «Alle» for å nullstille.`;
   }
-  updateMuscleFocusUI();
+}
+function handleMuscleFilterChange(){
+  const selector=document.getElementById("muscleFilter");
+  selectedMuscleFocus=selector&&selector.value!=="Alle"?selector.value:null;
+  renderProgress();
 }
 function onMuscleMapClick(muscle){
   const appMuscle=libraryToAppMuscle[muscle?.group];
@@ -478,10 +490,14 @@ function renderMuscleProgressChart(){
   updateMuscleFocusUI();
 }
 function renderProgress(){
+  const selector=document.getElementById("muscleFilter");
+  const filter=selector?.value||"Alle";
+  selectedMuscleFocus=filter==="Alle"?null:filter;
   renderMuscleProgressChart();
+  updateMuscleFilterHint(filter);
+  updateMuscleFocusUI();
   document.getElementById("progressWorkouts").textContent=history.length;
   document.getElementById("progressVolume").textContent=fmtNum(history.reduce((s,w)=>s+(w.volume||0),0));
-  const filter=document.getElementById("muscleFilter").value;
   const box=document.getElementById("progressCards");box.innerHTML="";
   const matching=exercises.filter(e=>filter==="Alle"||e.muscles.includes(filter));
   if(!matching.length){box.innerHTML='<div class="empty-state">Ingen øvelser i denne muskelgruppen ennå.</div>';return;}
@@ -896,7 +912,7 @@ document.getElementById("previousExercise").addEventListener("click",previousExe
 document.getElementById("finishWorkout").addEventListener("click",finishWorkout);
 document.getElementById("skipRest").addEventListener("click",()=>{stopRest();document.getElementById("restPanel").hidden=true;});
 document.getElementById("editOrderBtn").addEventListener("click",()=>{orderEditing=!orderEditing;renderHome();showToast(orderEditing?"Hold og dra øvelsene for å endre rekkefølge.":"Rekkefølgen er lagret.");});
-document.getElementById("muscleFilter").addEventListener("change",renderProgress);
+document.getElementById("muscleFilter").addEventListener("change",handleMuscleFilterChange);
 document.getElementById("saveSettings").addEventListener("click",saveSettings);
 document.getElementById("saveExerciseLimits").addEventListener("click",saveExerciseLimits);
 document.getElementById("exportData").addEventListener("click",()=>{exportData().catch(error=>{console.error(error);showToast("Kunne ikke lage sikkerhetskopi.");});});

@@ -247,3 +247,21 @@
 .cloud-sync-message{margin:0;padding:10px 12px;border-radius:10px;background:#141e2f;color:#afbdd0;font-size:12px;line-height:1.45}
 .cloud-sync-message[aria-live="polite"]{min-height:38px}
 @media(max-width:380px){.cloud-heading{align-items:flex-start;flex-direction:column}.cloud-auth-actions{grid-template-columns:1fr}}
+
+/* v3.8.3 – connected muscle filter, exercise cards and anatomy focus */
+.muscle-filter-hint{
+  margin:-4px 2px 14px;
+  color:#91a0b6;
+  font-size:11px;
+  line-height:1.45;
+}
+.muscle-progress-row.is-selected{
+  background:rgba(163,230,53,.09);
+  outline:1px solid rgba(163,230,53,.42);
+  outline-offset:4px;
+  border-radius:7px;
+}
+#muscleFilter:focus-visible{
+  outline:2px solid #a3e635;
+  outline-offset:2px;
+}
