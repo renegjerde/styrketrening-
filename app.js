@@ -428,7 +428,44 @@ function saveSettings(){
   settings.incrementKg=Math.max(1,Number(document.getElementById("incrementKg").value)||5);
   saveData();renderHome();showToast("Innstillingene er lagret.");
 }
-function exportData(){const blob=new Blob([JSON.stringify({settings,exercises,history},null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="styrkeloggen-backup.json";a.click();URL.revokeObjectURL(url);}
+async function exportData(){
+  const savedSession=await loadSession();
+  const backup={app:"Styrkeloggen",backupVersion:2,exportedAt:new Date().toISOString(),settings,exercises,history,activeSession:session||savedSession?.session||null,currentIndex:session?currentIndex:(savedSession?.currentIndex??currentIndex)};
+  const blob=new Blob([JSON.stringify(backup,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;
+  a.download=`styrkeloggen-backup-${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  showToast("Sikkerhetskopien er klar for nedlasting.");
+}
+function validateBackup(data){
+  if(!data||typeof data!=="object"||!Array.isArray(data.history)||!Array.isArray(data.exercises)||!data.settings||typeof data.settings!=="object")throw new Error("Filen ser ikke ut til å være en gyldig Styrkeloggen-sikkerhetskopi.");
+  if(data.history.some(w=>!w||!w.date||!Array.isArray(w.exercises)))throw new Error("Treningshistorikken i filen har feil format.");
+  if(data.exercises.some(e=>!e||typeof e.id!=="string"||typeof e.name!=="string"||!Array.isArray(e.muscles)))throw new Error("Øvelseslisten i filen har feil format.");
+  if(data.activeSession!==null&&data.activeSession!==undefined&&(!Array.isArray(data.activeSession.exercises)||!data.activeSession.date))throw new Error("Den pågående økten i filen har feil format.");
+  return data;
+}
+async function importDataFile(file){
+  if(!file)return;if(file.size>10*1024*1024){showToast("Filen er for stor. Velg en backup under 10 MB.");return;}
+  try{
+    const parsed=validateBackup(JSON.parse(await file.text()));
+    const activeText=parsed.activeSession?"\nEn pågående økt blir også gjenopprettet.":"";
+    if(!confirm(`Importer treningslogg?\n\n${parsed.history.length} lagrede økter og ${parsed.exercises.length} øvelser blir lagt inn.\n\nDette erstatter treningsdataene som allerede ligger på denne enheten.${activeText}\n\nFortsette?`))return;
+    const nextSettings={targetReps:12,restSeconds:180,incrementKg:5,...parsed.settings};
+    const nextExercises=parsed.exercises,nextHistory=parsed.history;
+    const ok=await writeStored(STORAGE_KEY,{settings:nextSettings,exercises:nextExercises,history:nextHistory});
+    if(!ok)throw new Error("Nettleseren kunne ikke lagre dataene permanent. Importen ble avbrutt.");
+    if(parsed.activeSession){
+      const sessionOk=await writeStored(STORAGE_KEY+"_session",{session:parsed.activeSession,currentIndex:Math.max(0,Math.min(Number(parsed.currentIndex)||0,parsed.activeSession.exercises.length-1))});
+      if(!sessionOk)throw new Error("Historikken ble lagret, men den pågående økten kunne ikke lagres permanent.");
+    }else await deleteStored(STORAGE_KEY+"_session");
+    settings=nextSettings;exercises=nextExercises;history=nextHistory;stopRest();session=parsed.activeSession||null;
+    currentIndex=session?Math.max(0,Math.min(Number(parsed.currentIndex)||0,session.exercises.length-1)):0;
+    document.getElementById("targetReps").value=settings.targetReps;document.getElementById("restSeconds").value=settings.restSeconds;document.getElementById("incrementKg").value=settings.incrementKg;
+    renderHome();renderProgress();renderHistory();setView("homeView");if(session)restoreRestClock();
+    showToast(`Importert ${history.length} treningsøkter.`);
+  }catch(error){console.error("Import failed:",error);showToast(error.message||"Kunne ikke importere filen.");}
+  finally{document.getElementById("importData").value="";}
+}
 function resetData(){if(confirm("Dette sletter all historikk og tilbakestiller appen. Er du sikker?")){localStorage.removeItem(STORAGE_KEY);settings={targetReps:12,restSeconds:180,incrementKg:5};exercises=DEFAULT_EXERCISES.map(x=>({...x}));history=[];renderHome();renderProgress();renderHistory();showToast("Data er nullstilt.");}}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
 document.getElementById("workoutDock").addEventListener("click",returnToWorkout);
@@ -454,7 +491,8 @@ document.getElementById("skipRest").addEventListener("click",()=>{stopRest();doc
 document.getElementById("editOrderBtn").addEventListener("click",()=>{orderEditing=!orderEditing;renderHome();showToast(orderEditing?"Hold og dra øvelsene for å endre rekkefølge.":"Rekkefølgen er lagret.");});
 document.getElementById("muscleFilter").addEventListener("change",renderProgress);
 document.getElementById("saveSettings").addEventListener("click",saveSettings);
-document.getElementById("exportData").addEventListener("click",exportData);
+document.getElementById("exportData").addEventListener("click",()=>{exportData().catch(error=>{console.error(error);showToast("Kunne ikke lage sikkerhetskopi.");});});
+document.getElementById("importData").addEventListener("change",event=>importDataFile(event.target.files?.[0]));
 document.getElementById("resetData").addEventListener("click",resetData);
 (async function initializeApp(){
   await loadData();

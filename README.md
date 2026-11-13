@@ -148,3 +148,12 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Ingen data vises dempet grå; negative utviklingstall røde, stabil grå, moderat blå, stor grønn og svært stor lime.
 - Fargelagene er brede anatomiske regioner som er manuelt plassert mot grunnillustrasjonen. De er en pedagogisk oversikt, ikke individuelle muskel-/fibergrenser eller måling av muskelvekst.
 - Beholder treningshistorikk, pauseklokke, navigasjon og anbefalt belastning fra forrige økt.
+
+
+## Versjon 3.5 – flytt treningsloggen mellom enheter
+- Eksporterer en JSON-sikkerhetskopi med dato i filnavnet.
+- Backupen inneholder øvelser, treningshistorikk, innstillinger og eventuell pågående økt med gjeldende øvelsesindeks/pauseinformasjon.
+- Import lar brukeren velge en JSON-fil fra enheten.
+- Filen valideres før import, og appen viser antall økter/øvelser og ber om bekreftelse før eksisterende data erstattes.
+- Importerte data lagres gjennom samme lokale lagringslag som appen ellers bruker (localStorage med IndexedDB-fallback).
+- Kompatibel med eldre JSON-backuper som inneholder settings, exercises og history; pågående økt blir da tom.
