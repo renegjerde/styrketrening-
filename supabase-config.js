@@ -6,6 +6,6 @@
  * VIKTIG: Bruk aldri service_role eller sb_secret her.
  */
 window.STYRKEL_LOGGEN_CLOUD = {
-  url: "https://DITT-EKSISTERENDE-PROSJEKT.supabase.co",
-  publishableKey: "sb_publishable_DIN_OFFENTLIGE_NOKKEL"
+  url: "https://bukqjuyedqzyribzkcui.supabase.co",
+  publishableKey: "sb_publishable_SHpVB28p0wKiWYg4HGt8eg_F_WZigNC"
 };

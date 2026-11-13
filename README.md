@@ -248,3 +248,9 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Styrkeloggen lagrer én privat JSON-logg per innlogget Supabase-bruker i `training_logs`.
 - De to appene deler innlogging, ikke treningsdata eller familiematdata.
 - Frontend-konfigurasjonen skal bruke publishable key (eller eldre anon key). Aldri legg `service_role` eller `sb_secret` i GitHub Pages.
+
+
+### Ferdig utfylt Supabase-konfigurasjon
+- Project URL er satt til Familiemat-prosjektet: `https://bukqjuyedqzyribzkcui.supabase.co`.
+- Publishable key er lagt inn i `supabase-config.js`.
+- REST-stien `/rest/v1/` skal ikke legges til Project URL-feltet.
