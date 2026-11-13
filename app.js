@@ -305,6 +305,25 @@ function smoothedChange(points){
   return baseline>0?((recent-baseline)/baseline)*100:null;
 }
 const muscleProgressColors={down:"#ef4444",stable:"#94a3b8",moderate:"#38bdf8",good:"#22c55e",top:"#a3e635"};
+let muscleMaps=null;
+let muscleMapPromise=null;
+let latestMuscleProgress=[];
+let selectedMuscleFocus=null;
+const appToLibraryMuscles={
+  "Skuldre":["shoulders"],
+  "Bryst":["chest"],
+  "Rygg":["upper_back","lats","lower_back"],
+  "Biceps":["biceps"],
+  "Triceps":["triceps"],
+  "Core":["abs","obliques"],
+  "Bein":["quads","hamstrings","calves"],
+  "Sete":["glutes"]
+};
+const libraryToAppMuscle={
+  shoulders:"Skuldre",chest:"Bryst",upper_back:"Rygg",lats:"Rygg",lower_back:"Rygg",
+  biceps:"Biceps",triceps:"Triceps",abs:"Core",obliques:"Core",
+  quads:"Bein",hamstrings:"Bein",calves:"Bein",glutes:"Sete"
+};
 function muscleProgressKey(change){
   if(change===null||!Number.isFinite(change))return "stable";
   if(change < -3)return "down";
@@ -313,31 +332,97 @@ function muscleProgressKey(change){
   if(change < 20)return "good";
   return "top";
 }
-async function renderMuscleProgressOverlay(progress){
-  const host=document.getElementById("muscleProgressOverlay");
-  if(!host)return;
-  try{
-    if(!host.querySelector("svg")){
-      const response=await fetch("muscle-progress-overlay.svg");
-      if(!response.ok)throw new Error("Overlay HTTP "+response.status);
-      host.innerHTML=await response.text();
+function buildMuscleHighlights(progress){
+  const byMuscle=new Map(progress.map(item=>[item.muscle,item]));
+  const highlights=[];
+  Object.entries(appToLibraryMuscles).forEach(([appMuscle,libraryGroups])=>{
+    const item=byMuscle.get(appMuscle);
+    const isSelected=selectedMuscleFocus===appMuscle;
+    if(!item||item.change===null){
+      if(!isSelected)return;
     }
-    const svg=host.querySelector("svg");
-    if(!svg)return;
-    const values=new Map(progress.map(item=>[item.muscle,item.change]));
-    svg.querySelectorAll("[data-muscle]").forEach(group=>{
-      const muscle=group.getAttribute("data-muscle");
-      const change=values.has(muscle)?values.get(muscle):null;
-      const key=muscleProgressKey(change);
-      group.querySelectorAll("path").forEach(path=>{
-        path.style.fill=muscleProgressColors[key];
-        path.style.fillOpacity=change===null?".18":".46";
-      });
-      group.setAttribute("data-progress",key);
-      group.setAttribute("aria-label",muscle+": "+(change===null?"ikke nok data":(change>0?"+":"")+change.toFixed(1)+" prosent"));
-    });
+    const color=muscleProgressColors[muscleProgressKey(item?.change??null)];
+    const intensity=selectedMuscleFocus?(isSelected?94:16):(item?.change===null?0:66);
+    if(intensity<=0)return;
+    libraryGroups.forEach(group=>highlights.push({group,intensity,color}));
+  });
+  return highlights;
+}
+function updateMuscleFocusUI(){
+  const chart=document.getElementById("muscleProgressChart");
+  if(!chart)return;
+  chart.querySelectorAll("[data-muscle]").forEach(row=>{
+    const active=row.dataset.muscle===selectedMuscleFocus;
+    row.classList.toggle("is-selected",active);
+    row.setAttribute("aria-pressed",active?"true":"false");
+  });
+}
+function setMuscleFocus(appMuscle){
+  selectedMuscleFocus=selectedMuscleFocus===appMuscle?null:appMuscle;
+  const highlights=buildMuscleHighlights(latestMuscleProgress);
+  if(muscleMaps){
+    muscleMaps.front.update({highlights});
+    muscleMaps.back.update({highlights});
+  }
+  updateMuscleFocusUI();
+}
+function onMuscleMapClick(muscle){
+  const appMuscle=libraryToAppMuscle[muscle?.group];
+  if(appMuscle)setMuscleFocus(appMuscle);
+}
+function showMuscleMapFallback(){
+  const views=document.querySelector(".musclemap-views");
+  const fallback=document.getElementById("muscleMapFallback");
+  if(views)views.hidden=true;
+  if(fallback)fallback.hidden=false;
+}
+async function ensureMuscleMaps(){
+  if(muscleMaps)return muscleMaps;
+  if(muscleMapPromise)return muscleMapPromise;
+  muscleMapPromise=(async()=>{
+    let timeoutId;
+    const modulePromise=import("https://cdn.jsdelivr.net/npm/js-rich-body-highlighter@0.1.1/+esm");
+    const timeoutPromise=new Promise((_,reject)=>{timeoutId=setTimeout(()=>reject(new Error("Muskelkartet brukte for lang tid på å laste.")),15000);});
+    let library;
+    try{library=await Promise.race([modulePromise,timeoutPromise]);}
+    finally{clearTimeout(timeoutId);}
+    if(typeof library.MuscleMap!=="function")throw new Error("MuscleMap-eksporten ble ikke funnet.");
+    const options={
+      gender:"male",width:"100%",theme:"dark",blendMode:"multiply",
+      hoverHighlight:true,hoverIntensity:22,
+      highlights:buildMuscleHighlights(latestMuscleProgress),
+      onMuscleClick:onMuscleMapClick
+    };
+    const frontHost=document.getElementById("muscleMapFront");
+    const backHost=document.getElementById("muscleMapBack");
+    if(!frontHost||!backHost)throw new Error("Muskelkartets visningsfelt mangler.");
+    const front=new library.MuscleMap(frontHost,{...options,view:"front"});
+    const back=new library.MuscleMap(backHost,{...options,view:"back"});
+    muscleMaps={front,back};
+    const fallback=document.getElementById("muscleMapFallback");
+    const views=document.querySelector(".musclemap-views");
+    if(fallback)fallback.hidden=true;
+    if(views)views.hidden=false;
+    return muscleMaps;
+  })().catch(error=>{
+    console.warn("Muskelkartet kunne ikke lastes:",error);
+    showMuscleMapFallback();
+    muscleMapPromise=null;
+    throw error;
+  });
+  return muscleMapPromise;
+}
+async function renderMuscleProgressMap(progress){
+  latestMuscleProgress=progress;
+  try{
+    const maps=await ensureMuscleMaps();
+    // Build after awaiting the map so a tap made during loading is not overwritten
+    // by an older highlight state.
+    const highlights=buildMuscleHighlights(latestMuscleProgress);
+    maps.front.update({highlights});
+    maps.back.update({highlights});
   }catch(error){
-    console.warn("Muscle progress overlay could not be rendered:",error);
+    // The OpenStax reference image remains as a no-overlay fallback.
   }
 }
 function renderMuscleProgressChart(){
@@ -356,18 +441,24 @@ function renderMuscleProgressChart(){
     return {muscle,change:perExercise.reduce((sum,x)=>sum+x.change,0)/perExercise.length,sources:perExercise.map(x=>x.exercise)};
   });
   window.styrkeloggenMuscleProgress=perMuscle;
-  renderMuscleProgressOverlay(perMuscle);
+  renderMuscleProgressMap(perMuscle);
   const classFor=change=>change>=20?"muscle-top":change>=10?"muscle-good":change>=3?"muscle-moderate":change>-3?"muscle-stable":"muscle-down";
   const labelFor=change=>change>=20?"Svært stor framgang":change>=10?"Stor framgang":change>=3?"Moderat framgang":change>-3?"Stabil":"Tilbakegang";
   const measured=perMuscle.filter(x=>x.change!==null).sort((a,b)=>b.change-a.change);
   const missing=perMuscle.filter(x=>x.change===null);
   chart.innerHTML=measured.map(v=>{
     const width=Math.max(3,Math.min(100,Math.abs(v.change)/25*100));
-    return `<div class="muscle-progress-row ${classFor(v.change)}"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${width}%"></div></div><span class="muscle-progress-value">${v.change>0?"+":""}${v.change.toFixed(1)}%</span><small class="muscle-progress-status">${labelFor(v.change)} · ${escapeHtml(v.sources.join(", "))}</small></div>`;
+    return `<div class="muscle-progress-row ${classFor(v.change)}" data-muscle="${escapeHtml(v.muscle)}" role="button" tabindex="0" aria-pressed="false" aria-label="Fremhev ${escapeHtml(v.muscle)} på muskelkartet"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:${width}%"></div></div><span class="muscle-progress-value">${v.change>0?"+":""}${v.change.toFixed(1)}%</span><small class="muscle-progress-status">${labelFor(v.change)} · ${escapeHtml(v.sources.join(", "))}</small></div>`;
   }).join("")+missing.map(v=>
-    `<div class="muscle-progress-row muscle-stable muscle-no-data"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:0%"></div></div><span class="muscle-progress-value">—</span><small class="muscle-progress-status">Ikke nok data · minst 2 økter med fullførte sett</small></div>`
+    `<div class="muscle-progress-row muscle-stable muscle-no-data" data-muscle="${escapeHtml(v.muscle)}" role="button" tabindex="0" aria-pressed="false" aria-label="Fremhev ${escapeHtml(v.muscle)} på muskelkartet"><span class="muscle-progress-label">${escapeHtml(v.muscle)}</span><div class="muscle-progress-track"><div class="muscle-progress-bar" style="width:0%"></div></div><span class="muscle-progress-value">—</span><small class="muscle-progress-status">Ikke nok data · minst 2 økter med fullførte sett</small></div>`
   ).join("");
   if(!measured.length)chart.innerHTML='<p class="muscle-progress-empty">Det er ennå ikke nok fullførte sett i gjentatte økter til å beregne estimert styrkeutvikling.</p>'+chart.innerHTML;
+  chart.querySelectorAll("[data-muscle]").forEach(row=>{
+    const activate=()=>setMuscleFocus(row.dataset.muscle);
+    row.addEventListener("click",activate);
+    row.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();activate();}});
+  });
+  updateMuscleFocusUI();
 }
 function renderProgress(){
   renderMuscleProgressChart();

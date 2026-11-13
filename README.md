@@ -164,3 +164,29 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Når apparatets maksvekt er nådd og alle sett er fullført med siste sett over repetisjonsmålet, foreslås én ekstra repetisjon per sett i stedet for mer vekt.
 - Nytt repetisjonsmål lagres per øvelse etter fullført anbefalt økt.
 - Anbefalingen i treningsvisningen er tydelig fremhevet med «ANBEFALT NESTE ØKT».
+
+
+## Versjon 3.7 – anatomiske muskelmasker koblet til progresjon
+- Erstatter de håndtegnede, feilplasserte fargeflatene med `js-rich-body-highlighter` (v0.1.1), et rammeverksuavhengig muskelkart med 14 sporede muskelgrupper og individuelle masker. MIT-lisens.
+- Viser separate front- og baksidefigurer. Kartbiblioteket farger de sporede muskelbanene med `mix-blend-mode`, slik at fargen følger muskelkonturene i illustrasjonen.
+- Kobler programgruppene til kartets faktiske maskenavn:
+  - Skuldre → shoulders
+  - Bryst → chest
+  - Rygg → upper_back, lats, lower_back
+  - Biceps → biceps
+  - Triceps → triceps
+  - Core → abs, obliques
+  - Bein → quads, hamstrings, calves
+  - Sete → glutes
+- Progresjonslisten og muskelkartet bruker samme e1RM-prosent og samme fargeskala.
+- Trykk på en progresjonsrad for å fremheve gruppen i begge figurene; trykk på en muskel i figuren for å velge samme gruppe i listen.
+- Hvis CDN/biblioteket ikke kan lastes, vises OpenStax-referanseillustrasjonen uten misvisende fargeoverlegg. Progresjonsradene fungerer fortsatt.
+- Kartbiblioteket lastes fra jsDelivr, så den dynamiske muskelvisningen krever internett. Øvrige treningsfunksjoner er uendret.
+- Kartet er en visuell treningsoversikt, ikke en medisinsk atlas eller måling av faktisk muskelvekst.
+
+
+### Teknisk merknad
+- Kartet bygges med bibliotekets dokumenterte `MuscleMap`-API: `gender`, `view`, `theme`, `blendMode`, `highlights` og `onMuscleClick`.
+- Highlight-oppdateringer bruker `map.update({ highlights })`; gruppenavnene er bibliotekets egne `group`-verdier.
+- Kartet har 14 sporede hovedgrupper. Styrkeloggens 8 programgrupper samler disse der det er naturlig (f.eks. Rygg samler øvre rygg, lats og korsrygg).
+- Bibliotekets front-/baksidekropper og tilhørende muskelmasker skaleres i samme SVG-visning. Vi legger dermed ikke selvstendige polygoner over OpenStax-figuren.
