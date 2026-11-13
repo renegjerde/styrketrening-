@@ -4,7 +4,7 @@ const DEFAULT_EXERCISES = [
   {id:"abs",name:"Magemaskin",weight:45,muscles:["Core"],icon:"✦"},
   {id:"chest",name:"Brystpressmaskin",weight:60,muscles:["Bryst","Skuldre","Triceps"],icon:"↔"},
   {id:"row",name:"Sittende roing",weight:40,muscles:["Rygg","Biceps"],icon:"⇠"},
-  {id:"backpress",name:"Sittende ryggpress",weight:90,muscles:["Rygg"],icon:"⌁"},
+  {id:"backpress",name:"Sittende ryggpress",weight:90,maxLoad:95,muscles:["Rygg"],icon:"⌁"},
   {id:"legpress",name:"Beinpress",weight:130,muscles:["Bein","Sete"],icon:"↑"}
 ];
 const STORAGE_KEY="styrkeloggen_v1_data";
@@ -76,6 +76,7 @@ async function deleteStored(key){
 async function loadData(){
   const d=await readStored(STORAGE_KEY);
   if(d){if(d.settings)settings={...settings,...d.settings};if(d.exercises?.length)exercises=d.exercises;if(d.history)history=d.history;}
+  const backpress=exercises.find(e=>e.id==="backpress");if(backpress&&backpress.maxLoad===undefined)backpress.maxLoad=95;
 }
 function saveData(){
   return writeStored(STORAGE_KEY,{settings,exercises,history}).then(ok=>{
@@ -110,45 +111,28 @@ function setView(id){
   document.querySelectorAll(".nav-item").forEach(b=>b.classList.toggle("active",b.dataset.view===id));
   if(id==="progressView")renderProgress();
   if(id==="historyView")renderHistory();
+  if(id==="settingsView")renderExerciseLimits();
   updateWorkoutDock(id);
 }
 function totalVolume(items){return items.reduce((sum,e)=>sum+(e.sets||[]).reduce((s,set)=>s+(Number(set.load)||0)*(Number(set.reps)||0),0),0);}
 function workoutExerciseEntry(workout,id){return (workout?.exercises||[]).find(e=>e.id===id)||null;}
-function isEligibleForIncrease(entry){
-  if(!entry||entry.hold||!Array.isArray(entry.sets)||entry.sets.length===0)return false;
-  // Require every planned set completed and the final set beyond the rep target.
-  return entry.sets.every(s=>s.done) && Number(entry.sets[entry.sets.length-1].reps)>settings.targetReps;
-}
+function exerciseTarget(ex){return Math.max(1,Number(ex.targetReps)||settings.targetReps);}
+function exerciseMaxLoad(ex){const n=Number(ex.maxLoad);return Number.isFinite(n)&&n>0?n:null;}
+function isEligibleForIncrease(entry,ex){return !!entry&&!entry.hold&&Array.isArray(entry.sets)&&entry.sets.length>0&&entry.sets.every(s=>s.done)&&Number(entry.sets.at(-1).reps)>exerciseTarget(ex);}
 function recommendOneIncrease(){
-  const latest=latestWorkout();
-  if(!latest)return null;
-  const candidates=exercises.map(ex=>{
-    const entry=workoutExerciseEntry(latest,ex.id);
-    if(!isEligibleForIncrease(entry))return null;
-    const lastLoad=Number(entry.sets[entry.sets.length-1].load)||ex.weight;
-    const muscleCoverage=ex.muscles.length;
-    return {exercise:ex,entry,lastLoad,muscleCoverage};
-  }).filter(Boolean);
-  if(!candidates.length)return null;
-  // Conservative tie-break: choose the least recently increased movement first;
-  // avoid increasing multiple exercises or over-weighting overlapping muscle groups.
-  const scored=candidates.map(c=>{
-    const previous=chronologicalHistory().filter(w=>w.date<latest.date&&workoutExerciseEntry(w,c.exercise.id));
-    const previousLoad=previous.length?Number(workoutExerciseEntry(previous.at(-1),c.exercise.id).sets.at(-1).load):c.lastLoad;
-    const gain=c.lastLoad-previousLoad;
-    return {...c,score:(c.entry.sets.at(-1).reps-settings.targetReps)*2 - Math.max(0,gain/settings.incrementKg)*1.5 - (c.muscleCoverage>2?1:0)};
-  }).sort((a,b)=>b.score-a.score);
-  return candidates.length?scored[0]:null;
+ const latest=latestWorkout();if(!latest)return null;
+ const candidates=exercises.map(ex=>{
+  const entry=workoutExerciseEntry(latest,ex.id);if(!isEligibleForIncrease(entry,ex))return null;
+  const last=entry.sets.at(-1),load=Number(last.load)||ex.weight,target=exerciseTarget(ex),max=exerciseMaxLoad(ex),atMax=max!==null&&load>=max;
+  return {exercise:ex,lastLoad:load,lastReps:Number(last.reps)||target,target,maxLoad:max,type:atMax?"reps":"load",score:(Number(last.reps)-target)*2-ex.muscles.length*.2};
+ }).filter(Boolean);
+ return candidates.sort((x,y)=>y.score-x.score)[0]||null;
 }
 function renderRecommendation(){
-  const box=document.getElementById("progressionRecommendation");
-  if(!box)return;
-  const candidate=recommendOneIncrease();
-  if(candidate){
-    box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKNING · ÉN ØVELSE</p><h3>${escapeHtml(candidate.exercise.name)}</h3><div class="recommendation-load">${fmtNum(candidate.lastLoad)} kg → ${fmtNum(candidate.lastLoad+settings.incrementKg)} kg</div><p>Alle sett er fullført, og siste sett gikk over ${settings.targetReps} reps. Dette er et forsiktig forslag basert på øktloggen – ikke en automatisk økning. Hvis øvelsen kjentes tung eller teknikken sviktet, behold belastningen.</p>`;
-  }else{
-    box.innerHTML=`<p class="eyebrow">PROGRESJONSVURDERING</p><h3 class="no-increase">Ingen økning anbefales akkurat nå</h3><p>Fullfør settene med kontroll og bygg opp repetisjonene. Appen foreslår maksimalt én øvelse per økt, og bare når siste sett går over ${settings.targetReps} reps. Ved tunge eller ujevne økter er det helt riktig å holde vekten.</p>`;
-  }
+ const box=document.getElementById("progressionRecommendation");if(!box)return;const c=recommendOneIncrease();
+ if(c&&c.type==="reps")box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKT · ÉN ØVELSE</p><h3>\${escapeHtml(c.exercise.name)}</h3><div class="recommendation-load">\${fmtNum(c.lastLoad)} kg · \${c.target} → \${c.target+1} reps</div><p>Maksvekten på \${fmtNum(c.maxLoad)} kg er nådd. Behold vekten og øk repetisjonene gradvis.</p>`;
+ else if(c)box.innerHTML=`<p class="eyebrow">ANBEFALT NESTE ØKT · ÉN ØVELSE</p><h3>\${escapeHtml(c.exercise.name)}</h3><div class="recommendation-load">\${fmtNum(c.lastLoad)} kg → \${fmtNum(Math.min(c.lastLoad+settings.incrementKg,c.maxLoad??Infinity))} kg</div><p><strong>Øk belastningen neste økt.</strong> Alle sett er fullført og repetisjonsmålet er passert.</p>`;
+ else box.innerHTML=`<p class="eyebrow">PROGRESJONSVURDERING</p><h3 class="no-increase">Ingen økning anbefales akkurat nå</h3><p>Fullfør alle sett med god teknikk. Ved registrert maksvekt foreslås flere repetisjoner i stedet for mer belastning.</p>`;
 }
 function renderHome(){
   document.getElementById("workoutCount").textContent=history.length;
@@ -188,21 +172,15 @@ function returnToWorkout(){
   renderExercise();
 }
 function startWorkout(chosenDate=null){
-  // A date selected from the calendar is saved as that workout's local calendar day.
-  const dateValue=chosenDate || new Date().toISOString().slice(0,10);
-  const isNewCurrentWorkout=!chosenDate || chosenDate===new Date().toISOString().slice(0,10);
-  const suggestedIncrease=isNewCurrentWorkout?recommendOneIncrease():null;
-  session={date:new Date(`${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>{
-    const baseLoad=latestExerciseLoad(e.id,e.weight);
-    const applyIncrease=!!suggestedIncrease&&suggestedIncrease.exercise.id===e.id;
-    const startLoad=applyIncrease?suggestedIncrease.lastLoad+settings.incrementKg:baseLoad;
-    return {id:e.id,name:e.name,muscles:e.muscles,hold:false,recommendedIncrease:applyIncrease?{from:suggestedIncrease.lastLoad,to:startLoad}:null,sets:Array.from({length:3},()=>({load:startLoad,reps:settings.targetReps,done:false}))};
-  })};
-  currentIndex=0;
-  // Show the workout immediately; persistence must never block the primary action.
-  setView("workoutView");
-  renderExercise();
-  saveSession();
+ const dateValue=chosenDate||new Date().toISOString().slice(0,10),isCurrent=!chosenDate||chosenDate===new Date().toISOString().slice(0,10);
+ const suggested=isCurrent?recommendOneIncrease():null;
+ session={date:new Date(`\${dateValue}T12:00:00`).toISOString(),exercises:exercises.map(e=>{
+  const base=latestExerciseLoad(e.id,e.weight),apply=!!suggested&&suggested.exercise.id===e.id;
+  const load=apply&&suggested.type==="load"?Math.min(suggested.lastLoad+settings.incrementKg,suggested.maxLoad??Infinity):base;
+  const reps=apply&&suggested.type==="reps"?suggested.target+1:exerciseTarget(e);
+  return {id:e.id,name:e.name,muscles:e.muscles,hold:false,maxLoad:exerciseMaxLoad(e),targetReps:reps,recommendedIncrease:apply?{type:suggested.type,from:suggested.type==="load"?suggested.lastLoad:suggested.target,to:suggested.type==="load"?load:reps,maxLoad:suggested.maxLoad}:null,sets:Array.from({length:3},()=>({load,reps,done:false}))};
+ })};
+ currentIndex=0;setView("workoutView");renderExercise();saveSession();
 }
 function resumeWorkout(){if(!session)return;setView("workoutView");renderExercise();}
 function current(){return session.exercises[currentIndex];}
@@ -233,11 +211,13 @@ function renderExercise(){
   updateCoach();saveSession();
 }
 function updateCoach(){
-  const e=current();const last=e.sets[e.sets.length-1];const tip=document.getElementById("coachTip");
-  if(e.hold)tip.innerHTML=`<strong>Hold belastningen:</strong> Du har markert at øvelsen kjentes tung. Ikke anbefal økning her – prioriter kontroll og stabil gjennomføring.`;
-  else if(e.recommendedIncrease)tip.innerHTML=`<strong>Anbefalt økning fra forrige økt:</strong> Belastningen er justert fra ${fmtNum(e.recommendedIncrease.from)} kg til ${fmtNum(e.recommendedIncrease.to)} kg etter forrige økts registreringer. Hvis oppvarmingen kjennes tung eller teknikken svikter, kan du redusere igjen.`;
-  else if(last.reps>settings.targetReps)tip.innerHTML=`<strong>Progresjonsmulighet:</strong> Du har registrert ${last.reps} reps i siste sett – mer enn målet på ${settings.targetReps}. Hvis teknikken var god og dette kjentes kontrollert, vurder ${fmtNum(Number(last.load)+settings.incrementKg)} kg neste gang.`;
-  else tip.innerHTML=`<strong>Fokus:</strong> Sikt mot ${settings.targetReps} gode repetisjoner i hvert sett. Når siste sett går over målet med kontroll, vurder en økning på ${settings.incrementKg} kg neste økt.`;
+ const e=current(),last=e.sets.at(-1),tip=document.getElementById("coachTip"),target=Number(e.targetReps)||settings.targetReps;
+ const configured=exercises.find(x=>x.id===e.id)||{},max=Number(e.maxLoad)||exerciseMaxLoad(configured),atMax=max!==null&&max!==undefined&&Number(last.load)>=max;
+ if(e.hold){tip.className="coach-tip";tip.innerHTML="<strong>HOLD BELASTNINGEN</strong><br>Du har markert øvelsen som tung. Prioriter kontroll – ingen økning anbefales.";}
+ else if(e.recommendedIncrease?.type==="reps"){tip.className="coach-tip coach-tip-recommended";tip.innerHTML=`<span class="coach-recommend-label">ANBEFALT NESTE ØKT</span><strong>Øk til \${e.recommendedIncrease.to} repetisjoner per sett</strong><br>Maksvekten på \${fmtNum(max)} kg er nådd. Behold belastningen og øk repetisjonene gradvis.`;}
+ else if(e.recommendedIncrease?.type==="load"){tip.className="coach-tip coach-tip-recommended";tip.innerHTML=`<span class="coach-recommend-label">ANBEFALT NESTE ØKT</span><strong>Øk belastningen fra \${fmtNum(e.recommendedIncrease.from)} til \${fmtNum(e.recommendedIncrease.to)} kg</strong><br>Dette er anbefalt etter forrige økt. Reduser igjen hvis teknikken svikter.`;}
+ else if(atMax){tip.className="coach-tip coach-tip-max";tip.innerHTML=`<strong>MAKSVEKT NÅDD · \${fmtNum(max)} KG</strong><br>Ikke øk belastningen videre. Sikt mot \${target+1} repetisjoner per sett når du klarer \${target} med god kontroll.`;}
+ else{tip.className="coach-tip";tip.innerHTML=`<strong>FOKUS</strong><br>Sikt mot \${target} gode repetisjoner. Når alle sett er fullført og siste sett går over målet, anbefales økt belastning.`;}
 }
 function changeLoad(delta){const e=current();e.sets.forEach(s=>s.load=Math.max(0,Number((s.load+delta).toFixed(2))));saveSession();renderExercise();}
 function nextExercise(){if(currentIndex<session.exercises.length-1){currentIndex++;saveSession();renderExercise();}else showToast("Du er på siste øvelse – avslutt økten når du er klar.");}
@@ -301,6 +281,7 @@ function finishWorkout(){
     const previousLatest=previousLatestByExercise.get(se.id);
     if(ex&&se.sets.length&&(!previousLatest||new Date(session.date)>=new Date(previousLatest.date))){
       ex.weight=Number(se.sets[se.sets.length-1].load)||ex.weight;
+      if(se.recommendedIncrease?.type==="reps"&&!se.hold&&se.sets.every(s=>s.done)&&Number(se.sets.at(-1).reps)>=Number(se.targetReps))ex.targetReps=Number(se.targetReps);
     }
   });
   saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;updateWorkoutDock("homeView");setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
@@ -422,6 +403,15 @@ function renderHistory(){
     box.appendChild(card);
   });
 }
+function renderExerciseLimits(){
+ const host=document.getElementById("exerciseLimits");if(!host)return;host.innerHTML="";
+ exercises.forEach(ex=>{const row=document.createElement("label");row.className="exercise-limit-row";const max=exerciseMaxLoad(ex);
+  row.innerHTML=`<span><strong>\${escapeHtml(ex.name)}</strong><small>\${escapeHtml(ex.muscles.join(" · "))}</small></span><span class="exercise-limit-input"><input type="number" min="0" step="0.5" inputmode="decimal" placeholder="Ingen grense" value="\${max??""}" aria-label="Maksvekt for \${escapeHtml(ex.name)}"><small>kg maks</small></span>`;host.appendChild(row);});
+}
+function saveExerciseLimits(){
+ document.querySelectorAll(".exercise-limit-row").forEach((row,i)=>{const ex=exercises[i],raw=row.querySelector("input").value.trim();ex.maxLoad=raw===""?null:Math.max(0,Number(raw)||0);if(ex.maxLoad===0)ex.maxLoad=null;});
+ saveData();renderRecommendation();showToast("Maksvektene er lagret.");
+}
 function saveSettings(){
   settings.targetReps=Math.max(1,Number(document.getElementById("targetReps").value)||12);
   settings.restSeconds=Math.max(0,Number(document.getElementById("restSeconds").value)||0);
@@ -491,6 +481,7 @@ document.getElementById("skipRest").addEventListener("click",()=>{stopRest();doc
 document.getElementById("editOrderBtn").addEventListener("click",()=>{orderEditing=!orderEditing;renderHome();showToast(orderEditing?"Hold og dra øvelsene for å endre rekkefølge.":"Rekkefølgen er lagret.");});
 document.getElementById("muscleFilter").addEventListener("change",renderProgress);
 document.getElementById("saveSettings").addEventListener("click",saveSettings);
+document.getElementById("saveExerciseLimits").addEventListener("click",saveExerciseLimits);
 document.getElementById("exportData").addEventListener("click",()=>{exportData().catch(error=>{console.error(error);showToast("Kunne ikke lage sikkerhetskopi.");});});
 document.getElementById("importData").addEventListener("change",event=>importDataFile(event.target.files?.[0]));
 document.getElementById("resetData").addEventListener("click",resetData);

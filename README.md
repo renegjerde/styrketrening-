@@ -157,3 +157,10 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Filen valideres før import, og appen viser antall økter/øvelser og ber om bekreftelse før eksisterende data erstattes.
 - Importerte data lagres gjennom samme lokale lagringslag som appen ellers bruker (localStorage med IndexedDB-fallback).
 - Kompatibel med eldre JSON-backuper som inneholder settings, exercises og history; pågående økt blir da tom.
+
+
+## Versjon 3.6 – tydelig progresjon og maksvekt
+- Maksvekt kan registreres individuelt per øvelse; tomt felt betyr ingen registrert grense.
+- Når apparatets maksvekt er nådd og alle sett er fullført med siste sett over repetisjonsmålet, foreslås én ekstra repetisjon per sett i stedet for mer vekt.
+- Nytt repetisjonsmål lagres per øvelse etter fullført anbefalt økt.
+- Anbefalingen i treningsvisningen er tydelig fremhevet med «ANBEFALT NESTE ØKT».
