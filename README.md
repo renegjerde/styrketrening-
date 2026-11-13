@@ -190,3 +190,41 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Highlight-oppdateringer bruker `map.update({ highlights })`; gruppenavnene er bibliotekets egne `group`-verdier.
 - Kartet har 14 sporede hovedgrupper. Styrkeloggens 8 programgrupper samler disse der det er naturlig (f.eks. Rygg samler øvre rygg, lats og korsrygg).
 - Bibliotekets front-/baksidekropper og tilhørende muskelmasker skaleres i samme SVG-visning. Vi legger dermed ikke selvstendige polygoner over OpenStax-figuren.
+
+
+## Versjon 3.8 – skylagring og synkronisering mellom enheter
+
+### Hva er nytt
+- E-post/passord-konto med Supabase Auth.
+- Automatisk synkronisering etter lokale endringer (med kort debouncing).
+- Automatisk henting av skydata ved innlogging på en ny enhet.
+- Bakgrunnskontroll hvert 25. sekund og når appen får fokus, slik at endringer fra en annen enhet kan hentes.
+- Hvis begge steder har historikk første gang de kobles sammen, slås loggene sammen. Identiske økter dedupliseres; lokale øvelsesinnstillinger brukes ved konflikt.
+- Pågående økt og pauseinformasjon følger også med.
+- Lokal lagring beholdes som reserve når nettet er utilgjengelig. Mislykkede synkroniseringer forsøkes på nytt.
+- JSON-eksport/import beholdes som ekstra sikkerhetskopi.
+
+### Første gangs oppsett – Supabase
+1. Opprett et prosjekt på https://supabase.com/ .
+2. Åpne prosjektets **SQL Editor**, lim inn hele innholdet fra `supabase-schema.sql`, og kjør det.
+3. Gå til **Project Settings → API** (eller API Keys). Kopier **Project URL** og **publishable key**.
+4. Åpne `supabase-config.js`. Bytt ut `https://DITT-PROSJEKT.supabase.co` med Project URL og `sb_publishable_DIN_OFFENTLIGE_NOKKEL` med publishable key.
+5. Publiser alle filene i ZIP-arkivet til GitHub Pages.
+6. I Supabase **Authentication → URL Configuration**, sett Site URL til den nøyaktige adressen til Styrkeloggen, og legg samme adresse til som Redirect URL.
+7. Opprett konto under Innstillinger i Styrkeloggen. Hvis e-postbekreftelse er aktivert, bekreft e-posten før du logger inn.
+8. Logg inn med samme konto på de andre enhetene.
+
+### Viktig sikkerhet
+- `supabase-config.js` skal bare inneholde Project URL og **publishable key**. Den offentlige nøkkelen er ment for klientbruk; Row Level Security (RLS) begrenser hver rad til eieren.
+- Legg aldri `service_role`, `secret` eller databasepassord i GitHub Pages eller i denne appen.
+- SQL-oppsettet aktiverer RLS, fjerner tilgang for `anon` og gir innloggede brukere kun tilgang til raden der `user_id = auth.uid()`.
+- Ikke del passordet ditt i chat eller i GitHub.
+- Supabase-prosjektet er en separat tjeneste og kan ha egne kvoter/prisvilkår. Sjekk gjeldende vilkår i Supabase før du lagrer store datamengder.
+
+### Synkroniseringsadferd og begrensninger
+- Lokal lagring skjer først; deretter sendes en oppdatert sikkerhetskopi til skyen.
+- På en ny enhet hentes skyloggen automatisk etter innlogging.
+- Hvis begge enheter har data når kontoen kobles til første gang, kombineres historikkene. Ved samtidige redigeringer av samme økt kan siste komplette øktversjon fortsatt vinne; unngå å endre samme pågående økt på to enheter samtidig.
+- Hvis en annen enhet oppdaterer skyloggen mens du har en aktiv lokal treningsøkt, venter appen med å overskrive økten. Avslutt økten eller bruk synkronisering etterpå.
+- Automatisk polling skjer hvert 25. sekund og når appen kommer tilbake i fokus. Det er ikke en sanntidsstrøm.
+- Cloud sync er ikke aktiv før Supabase-prosjektet er opprettet, SQL-en er kjørt og `supabase-config.js` er fylt inn.

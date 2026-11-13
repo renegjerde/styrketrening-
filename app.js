@@ -17,6 +17,19 @@ let timerInterval=null;
 let timerRemaining=180;
 let orderEditing=false;
 let dragId=null;
+let cloudClient=null;
+let cloudUser=null;
+let cloudReady=false;
+let cloudPendingLocalChanges=false;
+let cloudSyncBusy=false;
+let cloudSyncTimer=null;
+let cloudPollTimer=null;
+let cloudLastSeenUpdatedAt=null;
+let cloudApplyingRemote=false;
+let cloudActivationPromise=null;
+let cloudActivationUserId=null;
+const CLOUD_TABLE="training_logs";
+
 
 const IDB_NAME="styrkeloggen_storage";
 const IDB_STORE="records";
@@ -81,6 +94,7 @@ async function loadData(){
 function saveData(){
   return writeStored(STORAGE_KEY,{settings,exercises,history}).then(ok=>{
     if(!ok)showToast("Lagring er begrenset i nettleseren. Eksporter backup før du lukker siden.");
+    else scheduleCloudSync();
     return ok;
   });
 }
@@ -88,9 +102,12 @@ async function saveSession(){
   if(session){
     const ok=await writeStored(STORAGE_KEY+"_session",{session,currentIndex});
     if(!ok)showToast("Økten er startet, men nettleseren tillater bare midlertidig lagring. Eksporter data når økten er lagret.");
+    else scheduleCloudSync();
     return ok;
   }
-  return deleteStored(STORAGE_KEY+"_session");
+  const ok=await deleteStored(STORAGE_KEY+"_session");
+  if(ok)scheduleCloudSync();
+  return ok;
 }
 async function loadSession(){const d=await readStored(STORAGE_KEY+"_session");return d?.session?d:null;}
 function fmtDate(date){return new Date(date).toLocaleDateString("nb-NO",{day:"numeric",month:"short",year:"numeric"});}
@@ -503,6 +520,304 @@ function saveExerciseLimits(){
  document.querySelectorAll(".exercise-limit-row").forEach((row,i)=>{const ex=exercises[i],raw=row.querySelector("input").value.trim();ex.maxLoad=raw===""?null:Math.max(0,Number(raw)||0);if(ex.maxLoad===0)ex.maxLoad=null;});
  saveData();renderRecommendation();showToast("Maksvektene er lagret.");
 }
+function cloudIsConfigured(){
+  const cfg=window.STYRKEL_LOGGEN_CLOUD||{};
+  const url=String(cfg.url||"").trim();
+  const key=String(cfg.publishableKey||cfg.anonKey||"").trim();
+  return /^https:\/\/[a-z0-9-]+\.supabase\.co$/i.test(url)&&key.length>20&&!/SETT_INN|YOUR_|DIN_/i.test(key);
+}
+function setCloudMessage(message,state="idle"){
+  const msg=document.getElementById("cloudSyncMessage");
+  const badge=document.getElementById("cloudStatusBadge");
+  if(msg)msg.textContent=message;
+  if(badge){
+    badge.textContent=state==="ok"?"Tilkoblet":state==="busy"?"Synkroniserer":state==="error"?"Feil":state==="offline"?"Frakoblet":state==="setup"?"Må settes opp":cloudUser?"Tilkoblet":"Ikke tilkoblet";
+    badge.dataset.state=state;
+  }
+}
+function updateCloudPanels(){
+  const signed=!!cloudUser;
+  const account=document.getElementById("cloudAccountPanel");
+  const signedPanel=document.getElementById("cloudSignedInPanel");
+  const notice=document.getElementById("cloudConfigNotice");
+  const email=document.getElementById("cloudUserEmail");
+  if(account)account.hidden=signed||!cloudIsConfigured();
+  if(signedPanel)signedPanel.hidden=!signed;
+  if(notice)notice.hidden=cloudIsConfigured();
+  if(email&&cloudUser)email.textContent=cloudUser.email||"innlogget bruker";
+  ["cloudSignIn","cloudSignUp"].forEach(id=>{const el=document.getElementById(id);if(el)el.disabled=!cloudIsConfigured();});
+}
+async function makeCloudSnapshot(){
+  const saved=await loadSession();
+  return {
+    app:"Styrkeloggen",
+    backupVersion:3,
+    exportedAt:new Date().toISOString(),
+    settings,
+    exercises,
+    history,
+    activeSession:session||saved?.session||null,
+    currentIndex:session?currentIndex:(saved?.currentIndex??currentIndex)
+  };
+}
+function snapshotHasData(snapshot){
+  if(!snapshot)return false;
+  if((snapshot.history||[]).length>0||snapshot.activeSession)return true;
+  if(JSON.stringify(snapshot.settings)!==JSON.stringify({targetReps:12,restSeconds:180,incrementKg:5}))return true;
+  const defaults=DEFAULT_EXERCISES.map(x=>({...x}));
+  return JSON.stringify(snapshot.exercises)!==JSON.stringify(defaults);
+}
+function mergeCloudSnapshots(local,remote){
+  const workouts=new Map();
+  [...(remote.history||[]),...(local.history||[])].forEach(workout=>{
+    const key=JSON.stringify({date:workout.date,exercises:workout.exercises});
+    if(!workouts.has(key))workouts.set(key,workout);
+  });
+  const remoteExercises=remote.exercises||[];
+  const localById=new Map((local.exercises||[]).map(ex=>[ex.id,ex]));
+  const mergedExercises=remoteExercises.map(ex=>({...ex,...(localById.get(ex.id)||{})}));
+  (local.exercises||[]).forEach(ex=>{if(!mergedExercises.some(existing=>existing.id===ex.id))mergedExercises.push(ex);});
+  return {
+    app:"Styrkeloggen",
+    backupVersion:3,
+    exportedAt:new Date().toISOString(),
+    settings:{...(remote.settings||{}),...(local.settings||{})},
+    exercises:mergedExercises,
+    history:[...workouts.values()].sort((a,b)=>new Date(a.date)-new Date(b.date)),
+    activeSession:local.activeSession||remote.activeSession||null,
+    currentIndex:local.activeSession?local.currentIndex:(remote.currentIndex||0)
+  };
+}
+async function applyCloudSnapshot(snapshot){
+  const parsed=validateBackup({
+    ...snapshot,
+    activeSession:snapshot.activeSession??null,
+    currentIndex:snapshot.currentIndex??0
+  });
+  cloudApplyingRemote=true;
+  try{
+    const nextSettings={targetReps:12,restSeconds:180,incrementKg:5,...parsed.settings};
+    const nextExercises=parsed.exercises;
+    const nextHistory=parsed.history;
+    const ok=await writeStored(STORAGE_KEY,{settings:nextSettings,exercises:nextExercises,history:nextHistory});
+    if(!ok)throw new Error("Kunne ikke lagre skydataene lokalt på denne enheten.");
+    if(parsed.activeSession){
+      const sessionOk=await writeStored(STORAGE_KEY+"_session",{session:parsed.activeSession,currentIndex:Math.max(0,Math.min(Number(parsed.currentIndex)||0,parsed.activeSession.exercises.length-1))});
+      if(!sessionOk)throw new Error("Den pågående økten kunne ikke lagres lokalt.");
+    }else await deleteStored(STORAGE_KEY+"_session");
+    settings=nextSettings;exercises=nextExercises;history=nextHistory;
+    session=parsed.activeSession||null;
+    currentIndex=session?Math.max(0,Math.min(Number(parsed.currentIndex)||0,session.exercises.length-1)):0;
+    document.getElementById("targetReps").value=settings.targetReps;
+    document.getElementById("restSeconds").value=settings.restSeconds;
+    document.getElementById("incrementKg").value=settings.incrementKg;
+    renderHome();renderProgress();renderHistory();renderRecommendation();renderExerciseLimits();
+    if(session){stopRest();restoreRestClock();if(document.getElementById("workoutView").classList.contains("active"))renderExercise();}
+    else{stopRest();const panel=document.getElementById("restPanel");if(panel)panel.hidden=true;}
+    updateWorkoutDock(document.querySelector(".view.active")?.id);
+  }finally{
+    cloudApplyingRemote=false;
+  }
+}
+function cloudErrorText(error){
+  const msg=String(error?.message||error||"Ukjent feil");
+  if(/Invalid login credentials/i.test(msg))return "Feil e-post eller passord.";
+  if(/Email not confirmed/i.test(msg))return "Bekreft e-postadressen din før du logger inn.";
+  if(/Failed to fetch|NetworkError|fetch/i.test(msg))return "Ingen kontakt med skyen. Lokal lagring fortsetter, og appen prøver igjen senere.";
+  if(/relation .* does not exist|Could not find the table/i.test(msg))return "Sky-tabellen mangler. Kjør SQL-oppsettet i supabase-schema.sql i Supabase SQL Editor.";
+  if(/row-level security|permission denied|violates row-level/i.test(msg))return "Databasetilgangen avviste forespørselen. Kontroller RLS-reglene i SQL-oppsettet.";
+  return msg;
+}
+async function fetchCloudRow(){
+  const {data,error}=await cloudClient.from(CLOUD_TABLE).select("payload,updated_at").eq("user_id",cloudUser.id).maybeSingle();
+  if(error)throw error;
+  return data||null;
+}
+async function uploadCloudSnapshot(snapshot){
+  const {data,error}=await cloudClient.from(CLOUD_TABLE).upsert({
+    user_id:cloudUser.id,
+    payload:snapshot,
+    updated_at:new Date().toISOString()
+  },{onConflict:"user_id"}).select("updated_at").single();
+  if(error)throw error;
+  cloudLastSeenUpdatedAt=data?.updated_at||new Date().toISOString();
+}
+async function activateCloudUser(user){
+  if(!user)return;
+  if(cloudUser?.id===user.id&&cloudReady)return;
+  if(cloudActivationPromise&&cloudActivationUserId===user.id)return cloudActivationPromise;
+  cloudActivationUserId=user.id;
+  cloudActivationPromise=(async()=>{
+    cloudUser=user;cloudReady=false;updateCloudPanels();setCloudMessage("Henter treningsloggen fra skyen …","busy");
+    try{
+      const [remote,local]=await Promise.all([fetchCloudRow(),makeCloudSnapshot()]);
+      if(!remote){
+        await uploadCloudSnapshot(local);
+        cloudReady=true;cloudPendingLocalChanges=false;
+        setCloudMessage("Første sikkerhetskopi er lagret i skyen.","ok");
+      }else{
+        const cloudSnapshot=validateBackup(remote.payload);
+        cloudLastSeenUpdatedAt=remote.updated_at;
+        const localHas=snapshotHasData(local),cloudHas=snapshotHasData(cloudSnapshot);
+        if(!localHas&&cloudHas){
+          await applyCloudSnapshot(cloudSnapshot);
+          setCloudMessage(`Treningsloggen er hentet fra skyen (${history.length} økter).`,"ok");
+        }else if(localHas&&cloudHas){
+          const merged=mergeCloudSnapshots(local,cloudSnapshot);
+          await applyCloudSnapshot(merged);
+          await uploadCloudSnapshot(merged);
+          setCloudMessage(`Synkronisert. ${history.length} økter er samlet fra denne enheten og skyen.`,"ok");
+        }else if(localHas){
+          await uploadCloudSnapshot(local);
+          setCloudMessage("Denne enhetens treningslogg er lagret i skyen.","ok");
+        }else{
+          await applyCloudSnapshot(cloudSnapshot);
+          setCloudMessage("Tilkoblet skylagring.","ok");
+        }
+        cloudReady=true;cloudPendingLocalChanges=false;
+      }
+      startCloudPolling();
+    }catch(error){
+      console.error("Cloud activation failed:",error);
+      cloudReady=false;
+      setCloudMessage(cloudErrorText(error),"error");
+    }finally{
+      updateCloudPanels();
+    }
+  })().finally(()=>{
+    cloudActivationPromise=null;cloudActivationUserId=null;
+  });
+  return cloudActivationPromise;
+}
+function scheduleCloudSync(){
+  if(!cloudUser||!cloudReady||cloudApplyingRemote)return;
+  cloudPendingLocalChanges=true;
+  if(cloudSyncTimer)clearTimeout(cloudSyncTimer);
+  cloudSyncTimer=setTimeout(()=>syncCloudNow(false),1400);
+  setCloudMessage("Endringer lagret lokalt. Synkroniserer …","busy");
+}
+async function syncCloudNow(showToastAfter=true){
+  if(!cloudClient)return;
+  if(cloudUser&&!cloudReady){await activateCloudUser(cloudUser);return;}
+  if(!cloudUser||!cloudReady)return;
+  if(cloudSyncBusy)return;
+  cloudSyncBusy=true;
+  if(cloudSyncTimer){clearTimeout(cloudSyncTimer);cloudSyncTimer=null;}
+  setCloudMessage("Synkroniserer med skyen …","busy");
+  try{
+    let local=await makeCloudSnapshot();
+    const remote=await fetchCloudRow();
+    if(remote&&remote.updated_at&&cloudLastSeenUpdatedAt&&new Date(remote.updated_at)>new Date(cloudLastSeenUpdatedAt)){
+      const merged=mergeCloudSnapshots(local,validateBackup(remote.payload));
+      await applyCloudSnapshot(merged);
+      local=merged;
+    }
+    await uploadCloudSnapshot(local);
+    cloudPendingLocalChanges=false;
+    setCloudMessage(`Synkronisert ${new Date().toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}.`,"ok");
+    if(showToastAfter)showToast("Treningsloggen er synkronisert.");
+  }catch(error){
+    console.error("Cloud sync failed:",error);
+    cloudPendingLocalChanges=true;
+    setCloudMessage(cloudErrorText(error),"error");
+    if(showToastAfter)showToast("Kunne ikke synkronisere. Dataene er fortsatt lagret lokalt.");
+    if(cloudUser&&cloudReady&&!cloudSyncTimer)cloudSyncTimer=setTimeout(()=>syncCloudNow(false),15000);
+  }finally{
+    cloudSyncBusy=false;
+  }
+}
+async function pollCloudChanges(){
+  if(!cloudUser||!cloudReady||cloudSyncBusy||cloudPendingLocalChanges)return;
+  try{
+    const remote=await fetchCloudRow();
+    if(!remote||!remote.updated_at||!cloudLastSeenUpdatedAt||new Date(remote.updated_at)<=new Date(cloudLastSeenUpdatedAt))return;
+    if(session){
+      setCloudMessage("En annen enhet har nye endringer. Avslutt eller lagre denne økten før du henter dem.","busy");
+      return;
+    }
+    await applyCloudSnapshot(validateBackup(remote.payload));
+    cloudLastSeenUpdatedAt=remote.updated_at;
+    setCloudMessage(`Nye endringer hentet fra skyen kl. ${new Date().toLocaleTimeString("nb-NO",{hour:"2-digit",minute:"2-digit"})}.`,"ok");
+  }catch(error){
+    console.warn("Cloud polling failed:",error);
+    setCloudMessage(cloudErrorText(error),"error");
+  }
+}
+function startCloudPolling(){
+  if(cloudPollTimer)clearInterval(cloudPollTimer);
+  cloudPollTimer=setInterval(pollCloudChanges,25000);
+}
+async function signInToCloud(){
+  if(!cloudClient)return;
+  const email=document.getElementById("cloudEmail").value.trim();
+  const password=document.getElementById("cloudPassword").value;
+  if(!email||!password){showToast("Skriv inn e-post og passord.");return;}
+  setCloudMessage("Logger inn …","busy");
+  const {data,error}=await cloudClient.auth.signInWithPassword({email,password});
+  if(error){setCloudMessage(cloudErrorText(error),"error");showToast(cloudErrorText(error));return;}
+  document.getElementById("cloudPassword").value="";
+  await activateCloudUser(data.user);
+}
+async function signUpToCloud(){
+  if(!cloudClient)return;
+  const email=document.getElementById("cloudEmail").value.trim();
+  const password=document.getElementById("cloudPassword").value;
+  if(!email||password.length<8){showToast("Skriv inn e-post og et passord på minst 8 tegn.");return;}
+  setCloudMessage("Oppretter konto …","busy");
+  const {data,error}=await cloudClient.auth.signUp({email,password});
+  if(error){setCloudMessage(cloudErrorText(error),"error");showToast(cloudErrorText(error));return;}
+  document.getElementById("cloudPassword").value="";
+  if(data.session&&data.user)await activateCloudUser(data.user);
+  else setCloudMessage("Kontoen er opprettet. Sjekk e-posten og bekreft adressen før innlogging.","ok");
+}
+async function signOutFromCloud(){
+  if(!cloudClient)return;
+  if(cloudPendingLocalChanges){await syncCloudNow(false);if(cloudPendingLocalChanges){showToast("Synkronisering feilet. Du er fortsatt innlogget slik at dataene kan synkroniseres senere.");return;}}
+  const {error}=await cloudClient.auth.signOut();
+  if(error){setCloudMessage(cloudErrorText(error),"error");return;}
+  cloudUser=null;cloudReady=false;cloudPendingLocalChanges=false;cloudLastSeenUpdatedAt=null;
+  if(cloudPollTimer){clearInterval(cloudPollTimer);cloudPollTimer=null;}
+  if(cloudSyncTimer){clearTimeout(cloudSyncTimer);cloudSyncTimer=null;}
+  updateCloudPanels();setCloudMessage("Logget ut. Treningsloggen ligger fortsatt lokalt på denne enheten.","idle");
+}
+async function initCloudSync(){
+  updateCloudPanels();
+  const config=window.STYRKEL_LOGGEN_CLOUD||{};
+  if(!cloudIsConfigured()){
+    setCloudMessage("Skylagring er ikke konfigurert ennå. Fyll inn Supabase URL og publishable key i supabase-config.js.","setup");
+    return;
+  }
+  if(!window.supabase?.createClient){
+    setCloudMessage("Supabase-klienten ble ikke lastet. Kontroller nettforbindelsen.","error");return;
+  }
+  try{
+    cloudClient=window.supabase.createClient(config.url,config.publishableKey||config.anonKey,{
+      auth:{autoRefreshToken:true,persistSession:true,detectSessionInUrl:true}
+    });
+    document.getElementById("cloudSignIn").addEventListener("click",()=>signInToCloud().catch(e=>setCloudMessage(cloudErrorText(e),"error")));
+    document.getElementById("cloudSignUp").addEventListener("click",()=>signUpToCloud().catch(e=>setCloudMessage(cloudErrorText(e),"error")));
+    document.getElementById("cloudSignOut").addEventListener("click",()=>signOutFromCloud());
+    document.getElementById("cloudSyncNow").addEventListener("click",()=>syncCloudNow(true));
+    cloudClient.auth.onAuthStateChange((event,authSession)=>{
+      if(event==="SIGNED_OUT"){
+        cloudUser=null;cloudReady=false;cloudPendingLocalChanges=false;cloudLastSeenUpdatedAt=null;
+        if(cloudPollTimer)clearInterval(cloudPollTimer);
+        updateCloudPanels();setCloudMessage("Logget ut. Treningsloggen ligger fortsatt lokalt på denne enheten.","idle");
+      }else if(authSession?.user){
+        setTimeout(()=>activateCloudUser(authSession.user),0);
+      }
+    });
+    const {data,error}=await cloudClient.auth.getSession();
+    if(error)throw error;
+    if(data.session?.user)await activateCloudUser(data.session.user);
+    else setCloudMessage("Supabase er klart. Logg inn for å synkronisere mellom enheter.","ok");
+    window.addEventListener("focus",pollCloudChanges);
+    document.addEventListener("visibilitychange",()=>{if(!document.hidden)pollCloudChanges();});
+  }catch(error){
+    console.error("Cloud setup failed:",error);
+    setCloudMessage(cloudErrorText(error),"error");
+  }
+}
 function saveSettings(){
   settings.targetReps=Math.max(1,Number(document.getElementById("targetReps").value)||12);
   settings.restSeconds=Math.max(0,Number(document.getElementById("restSeconds").value)||0);
@@ -543,11 +858,22 @@ async function importDataFile(file){
     currentIndex=session?Math.max(0,Math.min(Number(parsed.currentIndex)||0,session.exercises.length-1)):0;
     document.getElementById("targetReps").value=settings.targetReps;document.getElementById("restSeconds").value=settings.restSeconds;document.getElementById("incrementKg").value=settings.incrementKg;
     renderHome();renderProgress();renderHistory();setView("homeView");if(session)restoreRestClock();
+    scheduleCloudSync();
     showToast(`Importert ${history.length} treningsøkter.`);
   }catch(error){console.error("Import failed:",error);showToast(error.message||"Kunne ikke importere filen.");}
   finally{document.getElementById("importData").value="";}
 }
-function resetData(){if(confirm("Dette sletter all historikk og tilbakestiller appen. Er du sikker?")){localStorage.removeItem(STORAGE_KEY);settings={targetReps:12,restSeconds:180,incrementKg:5};exercises=DEFAULT_EXERCISES.map(x=>({...x}));history=[];renderHome();renderProgress();renderHistory();showToast("Data er nullstilt.");}}
+async function resetData(){
+  if(!confirm("Dette sletter all historikk og tilbakestiller appen. Hvis skylagring er aktiv, synkroniseres nullstillingen også til kontoen. Er du sikker?"))return;
+  session=null;currentIndex=0;stopRest();
+  await deleteStored(STORAGE_KEY+"_session");
+  settings={targetReps:12,restSeconds:180,incrementKg:5};
+  exercises=DEFAULT_EXERCISES.map(x=>({...x}));
+  history=[];
+  await writeStored(STORAGE_KEY,{settings,exercises,history});
+  renderHome();renderProgress();renderHistory();renderExerciseLimits();renderRecommendation();
+  updateWorkoutDock("homeView");scheduleCloudSync();showToast("Data er nullstilt.");
+}
 document.querySelectorAll(".nav-item").forEach(b=>b.addEventListener("click",()=>setView(b.dataset.view)));
 document.getElementById("workoutDock").addEventListener("click",returnToWorkout);
 document.getElementById("startWorkoutBtn").addEventListener("click",event=>{
@@ -586,5 +912,8 @@ document.getElementById("resetData").addEventListener("click",resetData);
   document.getElementById("restSeconds").value=settings.restSeconds;
   document.getElementById("incrementKg").value=settings.incrementKg;
   renderHome();
+  renderRecommendation();
+  renderExerciseLimits();
   if(storageMode==="IndexedDB")showToast("Lagring bruker sikkerhetskopi i nettleseren (IndexedDB).");
+  await initCloudSync();
 })();

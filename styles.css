@@ -225,3 +225,25 @@
 .muscle-progress-row:focus-visible{outline:2px solid #a3e635;outline-offset:3px;border-radius:8px}
 .muscle-progress-row.is-selected{background:rgba(163,230,53,.09);outline:1px solid rgba(163,230,53,.42);outline-offset:4px;border-radius:7px}
 @media(max-width:380px){.musclemap-views{gap:3px}.musclemap-view-label{font-size:9px}}
+
+/* v3.8: online cloud account and sync status */
+.cloud-sync-card{gap:12px}
+.cloud-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.cloud-heading h3{margin:2px 0 0}
+.cloud-status-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;background:#28364d;color:#aebbd0;border:1px solid #3b4a62;font-size:10px;font-weight:750;white-space:nowrap}
+.cloud-status-badge[data-state="ok"]{background:rgba(34,197,94,.13);color:#86efac;border-color:rgba(34,197,94,.3)}
+.cloud-status-badge[data-state="busy"]{background:rgba(56,189,248,.12);color:#7dd3fc;border-color:rgba(56,189,248,.3)}
+.cloud-status-badge[data-state="error"]{background:rgba(239,68,68,.12);color:#fca5a5;border-color:rgba(239,68,68,.3)}
+.cloud-status-badge[data-state="setup"]{background:rgba(245,158,11,.12);color:#fcd34d;border-color:rgba(245,158,11,.3)}
+.cloud-config-notice{padding:11px 12px;background:#253248;border-left:3px solid #fbbf24;border-radius:9px;color:#c4cfdf;font-size:12px;line-height:1.5}
+.cloud-config-notice[hidden],.cloud-account-panel[hidden],.cloud-signed-in-panel[hidden]{display:none!important}
+.cloud-account-panel{display:grid;gap:10px}
+.cloud-account-panel label{display:grid;gap:6px;font-weight:650;font-size:12px;color:#c4cfdf}
+.cloud-account-panel input{width:100%;min-height:44px;padding:10px 12px;border-radius:10px;border:1px solid #3b4a62;background:#111827;color:#f3f6fb}
+.cloud-auth-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cloud-auth-actions button{min-height:44px}
+.cloud-user-line{margin:0 0 10px;color:#aebbd0;font-size:13px}
+.cloud-user-line strong{color:#f3f6fb;overflow-wrap:anywhere}
+.cloud-sync-message{margin:0;padding:10px 12px;border-radius:10px;background:#141e2f;color:#afbdd0;font-size:12px;line-height:1.45}
+.cloud-sync-message[aria-live="polite"]{min-height:38px}
+@media(max-width:380px){.cloud-heading{align-items:flex-start;flex-direction:column}.cloud-auth-actions{grid-template-columns:1fr}}

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#101827">
   <title>Styrkeloggen</title>
   <link rel="manifest" href="manifest.json">
-  <link rel="stylesheet" href="styles.css?v=3.7">
+  <link rel="stylesheet" href="styles.css?v=3.8">
 </head>
 <body>
   <div class="app-shell">
@@ -86,6 +86,28 @@
       <section id="settingsView" class="view">
         <p class="eyebrow">TILPASS APPEN</p><h2 class="page-title">Innstillinger</h2>
         <div class="settings-card"><label>Standard repetisjonsmål <input id="targetReps" type="number" min="1" max="30" value="12"></label><label>Pause mellom sett (sekunder) <input id="restSeconds" type="number" min="0" max="900" value="180"></label><label>Økning per trinn (kg) <input id="incrementKg" type="number" min="1" max="50" value="5"></label><button class="primary-button full" id="saveSettings">Lagre innstillinger</button></div>
+        <div class="settings-card cloud-sync-card">
+          <div class="cloud-heading"><div><p class="eyebrow">SKYLAGRING</p><h3>Synkronisering mellom enheter</h3></div><span id="cloudStatusBadge" class="cloud-status-badge">Ikke tilkoblet</span></div>
+          <p class="muted">Logg inn med samme konto på iPhone, PC og nettbrett. Treningsloggen synkroniseres automatisk når du registrerer endringer.</p>
+          <div id="cloudConfigNotice" class="cloud-config-notice">Skylagring må kobles til et Supabase-prosjekt én gang. Se <strong>README</strong> og filen <code>supabase-config.js</code> i prosjektpakken.</div>
+          <div id="cloudAccountPanel" class="cloud-account-panel">
+            <label>E-postadresse<input id="cloudEmail" type="email" autocomplete="email" placeholder="deg@eksempel.no"></label>
+            <label>Passord<input id="cloudPassword" type="password" autocomplete="current-password" minlength="8" placeholder="Minst 8 tegn"></label>
+            <div class="cloud-auth-actions">
+              <button class="primary-button" id="cloudSignIn" type="button">Logg inn</button>
+              <button class="secondary-button" id="cloudSignUp" type="button">Opprett konto</button>
+            </div>
+          </div>
+          <div id="cloudSignedInPanel" class="cloud-signed-in-panel" hidden>
+            <p class="cloud-user-line">Innlogget som <strong id="cloudUserEmail"></strong></p>
+            <div class="cloud-auth-actions">
+              <button class="primary-button" id="cloudSyncNow" type="button">Synkroniser nå</button>
+              <button class="secondary-button" id="cloudSignOut" type="button">Logg ut</button>
+            </div>
+          </div>
+          <p id="cloudSyncMessage" class="cloud-sync-message" aria-live="polite">Lokal lagring er aktiv. Logg inn for å aktivere skyen.</p>
+          <p class="small-muted">Du kan fortsatt eksportere JSON-backup under. Passordet lagres ikke i treningsloggen.</p>
+        </div>
         <div class="settings-card"><h3>Maksvekt på apparatene</h3><p class="muted">Legg inn høyeste belastning apparatet tillater. Når maksvekten er nådd, foreslår appen flere repetisjoner i stedet for mer vekt.</p><div id="exerciseLimits" class="exercise-limits"></div><button class="primary-button full" id="saveExerciseLimits">Lagre maksvekter</button></div>
         <div class="settings-card backup-card"><h3>Flytt treningsloggen</h3><p class="muted">Treningsloggen lagres på denne enheten. Last ned en sikkerhetskopi for å flytte historikk, innstillinger og en eventuell pågående økt til en annen enhet.</p><button class="primary-button full" id="exportData">Last ned treningslogg</button><label class="backup-file-label" for="importData">Importer treningslogg fra fil</label><input id="importData" class="backup-file-input" type="file" accept=".json,application/json"><p class="small-muted">Import erstatter dataene som ligger på denne enheten. Du får en bekreftelse før noe endres.</p></div>
         <div class="settings-card"><h3>Nullstill</h3><p class="muted">Sletter all historikk og tilbakestiller appen.</p><button class="danger-button" id="resetData">Nullstill all treningsdata</button></div>
@@ -100,6 +122,8 @@
   <nav class="bottom-nav"><button class="nav-item active" data-view="homeView"><span>⌂</span>Oversikt</button><button class="nav-item" data-view="progressView"><span>↗</span>Progresjon</button><button class="nav-item" data-view="historyView"><span>◷</span>Historikk</button><button class="nav-item" data-view="settingsView"><span>⚙</span>Innstillinger</button></nav>
   </div>
   <div id="toast" class="toast" role="status"></div>
-  <script src="app.js?v=3.7"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-config.js?v=3.8"></script>
+  <script src="app.js?v=3.8"></script>
 </body>
 </html>
