@@ -92,7 +92,8 @@
           <div id="cloudConfigNotice" class="cloud-config-notice">Skylagring må kobles til et Supabase-prosjekt én gang. Se <strong>README</strong> og filen <code>supabase-config.js</code> i prosjektpakken.</div>
           <div id="cloudAccountPanel" class="cloud-account-panel">
             <label>E-postadresse<input id="cloudEmail" type="email" autocomplete="email" placeholder="deg@eksempel.no"></label>
-            <label>Passord<input id="cloudPassword" type="password" autocomplete="current-password" minlength="8" placeholder="Minst 8 tegn"></label>
+            <label>Passord<input id="cloudPassword" type="password" autocomplete="current-password" minlength="8" placeholder="Passordet du bruker i Familiemat"></label>
+            <p class="small-muted cloud-shared-login-note">Har du allerede konto i Familiemat? Bruk samme e-postadresse og passord her. Du trenger ikke opprette en ny konto.</p>
             <div class="cloud-auth-actions">
               <button class="primary-button" id="cloudSignIn" type="button">Logg inn</button>
               <button class="secondary-button" id="cloudSignUp" type="button">Opprett konto</button>
@@ -123,7 +124,7 @@
   </div>
   <div id="toast" class="toast" role="status"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-config.js?v=3.8"></script>
-  <script src="app.js?v=3.8"></script>
+  <script src="supabase-config.js?v=3.8.1"></script>
+  <script src="app.js?v=3.8.1"></script>
 </body>
 </html>

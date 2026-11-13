@@ -1,6 +1,6 @@
--- Styrkeloggen cloud sync
--- Run this once in Supabase Dashboard -> SQL Editor.
--- Each signed-in user can only read/write their own row.
+-- Styrkeloggen cloud sync – run in the EXISTING Familiemat Supabase project.
+-- This creates one separate table and does not alter Familiemat's tables.
+-- Each authenticated user can only access their own Styrkeloggen row.
 
 create table if not exists public.training_logs (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -10,7 +10,7 @@ create table if not exists public.training_logs (
 
 alter table public.training_logs enable row level security;
 
-revoke all on table public.training_logs from anon;
+revoke all on table public.training_logs from public, anon;
 grant select, insert, update, delete on table public.training_logs to authenticated;
 
 drop policy if exists "Users manage their own training log" on public.training_logs;

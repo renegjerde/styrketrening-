@@ -1,10 +1,11 @@
 /*
- * Styrkeloggen – Supabase-tilkobling
+ * Styrkeloggen bruker det eksisterende Supabase-prosjektet til Familiemat.
+ * Lim inn samme Project URL og publishable key (eller eldre anon key)
+ * som Familiemat bruker. Ikke opprett et nytt Supabase-prosjekt.
  *
- * Fyll inn Project URL og publishable key fra Supabase-prosjektet ditt.
- * Bruk IKKE service_role/secret key i denne filen.
+ * VIKTIG: Bruk aldri service_role eller sb_secret her.
  */
 window.STYRKEL_LOGGEN_CLOUD = {
-  url: "https://DITT-PROSJEKT.supabase.co",
+  url: "https://DITT-EKSISTERENDE-PROSJEKT.supabase.co",
   publishableKey: "sb_publishable_DIN_OFFENTLIGE_NOKKEL"
 };

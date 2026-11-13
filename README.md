@@ -228,3 +228,23 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Hvis en annen enhet oppdaterer skyloggen mens du har en aktiv lokal treningsøkt, venter appen med å overskrive økten. Avslutt økten eller bruk synkronisering etterpå.
 - Automatisk polling skjer hvert 25. sekund og når appen kommer tilbake i fokus. Det er ikke en sanntidsstrøm.
 - Cloud sync er ikke aktiv før Supabase-prosjektet er opprettet, SQL-en er kjørt og `supabase-config.js` er fylt inn.
+
+
+## Oppsett når Styrkeloggen deler Supabase-prosjekt med Familiemat
+
+**Ikke opprett et nytt Supabase-prosjekt.** Bruk prosjektet som Familiemat allerede bruker.
+
+1. Finn `Project URL` og `publishable key` i Supabase Dashboard for Familiemat-prosjektet. Hvis Familiemat fortsatt bruker den eldre `anon`-nøkkelen, kan den også brukes midlertidig i konfigurasjonen.
+2. Åpne `supabase-config.js` og lim inn den samme Project URL og nøkkelen.
+3. Åpne SQL Editor i det eksisterende prosjektet og kjør `supabase-schema.sql`.
+4. SQL-en oppretter bare tabellen `public.training_logs`, aktiverer RLS på den tabellen og gir brukere tilgang til sin egen rad. Den endrer ikke `families`, `family_members`, `recipes`, `week_plans` eller `pantry`.
+5. Publiser filene på GitHub Pages.
+6. I Styrkeloggen logger du inn med den samme e-postadressen og passordet som du bruker i Familiemat. Ikke velg «Opprett konto» dersom du allerede har Familiemat-konto.
+7. Legg den publiserte Styrkeloggen-adressen til under Supabase Authentication → URL Configuration → Redirect URLs dersom Supabase ber om det.
+
+### Kontoer og data
+- Supabase Auth er felles for alle apper i samme prosjekt. Samme innlogging gir samme `auth.uid()` i Familiemat og Styrkeloggen.
+- Familiemat fortsetter å lagre familiens data via sine egne familietabeller og medlemsregler.
+- Styrkeloggen lagrer én privat JSON-logg per innlogget Supabase-bruker i `training_logs`.
+- De to appene deler innlogging, ikke treningsdata eller familiematdata.
+- Frontend-konfigurasjonen skal bruke publishable key (eller eldre anon key). Aldri legg `service_role` eller `sb_secret` i GitHub Pages.
