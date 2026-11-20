@@ -284,3 +284,10 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Sletteknappen er flyttet opp i toppfeltet på hvert historikkort og har tydelig «Slett»-tekst.
 - Historikken dedupliseres på lokal kalenderdato, øvelser, sett og totalvolum ved innlasting og skysammenslåing.
 - Identiske duplikater fra samme dag fjernes; ulike økter med forskjellig innhold beholdes.
+
+
+## Versjon 3.8.6 – mer representativ progresjonsgraf
+- e1RM per økt beregnes nå som gjennomsnittet av e1RM fra alle fullførte sett, ikke beste enkeltsett.
+- Snittbelastning, snittrepetisjoner og antall fullførte sett vises i øvelseskortene.
+- Grafene viser hvert enkelt øktspunkt i grått og et glidende snitt over inntil tre økter i grønt.
+- Samme beregningsfunksjon brukes av øvelsesgrafene og muskelgruppenes progresjonsberegning.

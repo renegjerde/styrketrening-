@@ -304,13 +304,18 @@ function finishWorkout(){
   saveData();session=null;saveSession();stopRest();document.getElementById("restPanel").hidden=true;updateWorkoutDock("homeView");setView("homeView");renderHome();showToast(`Økt lagret · ${fmtNum(volume)} kg totalvolum`);
 }
 function completedSetMetrics(entry){
+  // Each completed working set contributes equally. This prevents one unusually
+  // strong set from hiding weaker sets in the same workout.
   const sets=(entry?.sets||[]).filter(s=>s.done && Number(s.load)>0 && Number(s.reps)>0);
   if(!sets.length)return null;
   const e1rmValues=sets.map(s=>Number(s.load)*(1+Number(s.reps)/30));
+  const mean=values=>values.reduce((sum,value)=>sum+value,0)/values.length;
   return {
-    e1rm:Math.max(...e1rmValues),
-    load:Math.max(...sets.map(s=>Number(s.load))),
-    reps:Math.max(...sets.map(s=>Number(s.reps))),
+    e1rm:mean(e1rmValues),
+    bestSetE1rm:Math.max(...e1rmValues),
+    load:mean(sets.map(s=>Number(s.load))),
+    reps:mean(sets.map(s=>Number(s.reps))),
+    setCount:sets.length,
     volume:sets.reduce((sum,s)=>sum+Number(s.load)*Number(s.reps),0)
   };
 }
@@ -512,11 +517,21 @@ function renderProgress(){
     const trend=change===null?"For få økter":`${change>0?"+":""}${change.toFixed(1)}% estimert styrke`;
     const spark=records.length>1?makeSparkline(records.map(p=>p.e1rm)):'<div class="small-muted" style="margin-top:12px">Logg minst to økter med fullførte sett for å se utviklingen.</div>';
     const card=document.createElement("div");card.className="progress-card";
-    card.innerHTML=`<div class="progress-card-top"><div><h3>${escapeHtml(ex.name)}</h3><div class="small-muted">${ex.muscles.join(" · ")} · ${records.length} økter med fullførte sett</div></div><div class="progress-current">${latest?fmtNum(latest.e1rm)+" kg e1RM":"—"}</div></div><div class="progress-metrics"><span>Belastning: <strong>${latest?fmtNum(latest.load)+" kg":"—"}</strong></span><span>Reps: <strong>${latest?latest.reps:"—"}</strong></span><span>Volum siste økt: <strong>${latest?fmtNum(latest.volume)+" kg":"—"}</strong></span></div><div class="progress-trend">${trend}</div>${spark}`;
+    card.innerHTML=`<div class="progress-card-top"><div><h3>${escapeHtml(ex.name)}</h3><div class="small-muted">${ex.muscles.join(" · ")} · ${records.length} økter med fullførte sett</div></div><div class="progress-current">${latest?fmtNum(latest.e1rm)+" kg e1RM":"—"}</div></div><div class="progress-metrics"><span>Snittbelastning: <strong>${latest?fmtNum(latest.load)+" kg":"—"}</strong></span><span>Snitt reps: <strong>${latest?latest.reps.toFixed(1).replace(".",","):"—"}</strong></span><span>Fullførte sett: <strong>${latest?latest.setCount:"—"}</strong></span><span>Volum siste økt: <strong>${latest?fmtNum(latest.volume)+" kg":"—"}</strong></span></div><div class="progress-trend">${trend}</div>${spark}`;
     box.appendChild(card);
   });
 }
-function makeSparkline(values){const min=Math.min(...values)-1,max=Math.max(...values)+1;const points=values.map((v,i)=>`${(i/(values.length-1))*280},${36-((v-min)/(max-min))*30}`).join(" ");return `<svg class="sparkline" viewBox="0 0 280 40" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="#c8f169" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
+function makeSparkline(values){
+  if(!values||values.length<2)return '<div class="small-muted" style="margin-top:12px">Logg minst to økter med fullførte sett for å se utviklingen.</div>';
+  const rolling=values.map((_,i)=>{const slice=values.slice(Math.max(0,i-2),i+1);return slice.reduce((a,b)=>a+b,0)/slice.length;});
+  const all=[...values,...rolling],min=Math.min(...all),max=Math.max(...all),range=Math.max(1,max-min);
+  const xy=v=>36-((v-min)/range)*30;
+  const x=i=>(i/(values.length-1))*280;
+  const raw=values.map((v,i)=>`${x(i)},${xy(v)}`).join(" ");
+  const trend=rolling.map((v,i)=>`${x(i)},${xy(v)}`).join(" ");
+  const dots=values.map((v,i)=>`<circle cx="${x(i)}" cy="${xy(v)}" r="2.8" fill="#94a3b8"/>`).join("");
+  return `<svg class="sparkline" viewBox="0 0 280 40" preserveAspectRatio="none" role="img" aria-label="Styrkeestimat per økt med glidende trend"><polyline points="${raw}" fill="none" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>${dots}<polyline points="${trend}" fill="none" stroke="#c8f169" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg><div class="small-muted">Grå punkter: hver økt · grønn linje: glidende snitt (inntil 3 økter)</div>`;
+}
 function workoutDeletionKey(workout){
   const day=workout?.date?fmtDate(workout.date):"";
   const exercises=(workout?.exercises||[]).map(entry=>({
