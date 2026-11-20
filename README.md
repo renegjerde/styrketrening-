@@ -291,3 +291,9 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Snittbelastning, snittrepetisjoner og antall fullførte sett vises i øvelseskortene.
 - Grafene viser hvert enkelt øktspunkt i grått og et glidende snitt over inntil tre økter i grønt.
 - Samme beregningsfunksjon brukes av øvelsesgrafene og muskelgruppenes progresjonsberegning.
+
+
+## Versjon 3.8.7 – cache-busting
+- Oppdatert versjonsparameter på app.js og styles.css i index.html til 3.8.7.
+- Dette tvinger nettleseren til å hente nye filer i stedet for å bruke den gamle 3.8.3-versjonen fra mellomlageret.
+- Ingen treningsdata eller historikk blir endret av denne cache-rettelsen.
