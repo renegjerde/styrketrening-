@@ -88,7 +88,7 @@ async function deleteStored(key){
 }
 async function loadData(){
   const d=await readStored(STORAGE_KEY);
-  if(d){if(d.settings)settings={...settings,...d.settings};if(d.exercises?.length)exercises=d.exercises;if(d.history)history=d.history;}
+  if(d){if(d.settings)settings={...settings,...d.settings};if(d.exercises?.length)exercises=d.exercises;if(d.history)history=dedupeHistory(d.history);}
   const backpress=exercises.find(e=>e.id==="backpress");if(backpress&&backpress.maxLoad===undefined)backpress.maxLoad=95;
 }
 function saveData(){
@@ -517,13 +517,58 @@ function renderProgress(){
   });
 }
 function makeSparkline(values){const min=Math.min(...values)-1,max=Math.max(...values)+1;const points=values.map((v,i)=>`${(i/(values.length-1))*280},${36-((v-min)/(max-min))*30}`).join(" ");return `<svg class="sparkline" viewBox="0 0 280 40" preserveAspectRatio="none"><polyline points="${points}" fill="none" stroke="#c8f169" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;}
+function workoutDeletionKey(workout){
+  const day=workout?.date?fmtDate(workout.date):"";
+  const exercises=(workout?.exercises||[]).map(entry=>({
+    id:entry.id||"",name:entry.name||"",
+    sets:(entry.sets||[]).map(set=>[Number(set.load)||0,Number(set.reps)||0,!!set.done])
+  }));
+  return JSON.stringify({day,volume:Number(workout?.volume)||0,exercises});
+}
+function dedupeHistory(items){
+  const seen=new Set(),result=[];
+  (items||[]).forEach(workout=>{
+    const key=workoutDeletionKey(workout);
+    if(seen.has(key))return;
+    seen.add(key);result.push(workout);
+  });
+  return result;
+}
+function deletedWorkoutKeys(){
+  return Array.isArray(settings._deletedWorkoutKeys)?settings._deletedWorkoutKeys:[];
+}
+async function deleteWorkout(key){
+  const workout=history.find(item=>workoutDeletionKey(item)===key);
+  if(!workout)return;
+  const date=fmtDate(workout.date);
+  if(!confirm(`Slette treningsøkten ${date}?\n\nØkten fjernes fra historikken og progresjonsberegningene. Dette kan ikke angres.`))return;
+  history=history.filter(item=>workoutDeletionKey(item)!==key);
+  settings._deletedWorkoutKeys=[...new Set([...deletedWorkoutKeys(),key])];
+  // Restore each exercise's suggested starting load from its newest remaining workout.
+  exercises.forEach(ex=>{
+    const latest=chronologicalHistory().filter(w=>(w.exercises||[]).some(entry=>entry.id===ex.id)).at(-1);
+    const entry=latest?.exercises?.find(item=>item.id===ex.id);
+    const lastSet=entry?.sets?.length?entry.sets.at(-1):null;
+    const fallback=DEFAULT_EXERCISES.find(item=>item.id===ex.id)?.weight;
+    if(lastSet&&Number.isFinite(Number(lastSet.load))&&Number(lastSet.load)>0)ex.weight=Number(lastSet.load);
+    else if(Number.isFinite(fallback))ex.weight=fallback;
+  });
+  await saveData();
+  renderHistory();
+  renderHome();
+  renderRecommendation();
+  if(document.getElementById("progressView")?.classList.contains("active"))renderProgress();
+  showToast("Treningsøkten er slettet.");
+}
 function renderHistory(){
   const box=document.getElementById("historyList");box.innerHTML="";
   if(!history.length){box.innerHTML='<div class="empty-state">Ingen økter lagret ennå.<br>Den første økten din dukker opp her.</div>';return;}
   [...history].reverse().forEach(w=>{
     const card=document.createElement("div");card.className="history-card";
-    const summary=w.exercises.map(e=>`${e.name}: ${e.sets.map(s=>`${s.load} kg × ${s.reps}`).join(", ")}`).join(" · ");
-    card.innerHTML=`<div class="history-card-head"><strong>${fmtDate(w.date)}</strong><span class="progress-current">${fmtNum(w.volume)} kg</span></div><p>${escapeHtml(summary)}</p>`;
+    const key=workoutDeletionKey(w);
+    const summary=(w.exercises||[]).map(e=>`${e.name}: ${(e.sets||[]).map(s=>`${s.load} kg × ${s.reps}`).join(", ")}`).join(" · ");
+    card.innerHTML=`<div class="history-card-head"><strong>${fmtDate(w.date)}</strong><div class="history-card-tools"><span class="history-card-volume">${fmtNum(w.volume)} kg</span><button type="button" class="delete-workout-btn" aria-label="Slett økten ${escapeHtml(fmtDate(w.date))}" title="Slett økt">Slett</button></div></div><p>${escapeHtml(summary)}</p>`;
+    card.querySelector(".delete-workout-btn").addEventListener("click",()=>deleteWorkout(key));
     box.appendChild(card);
   });
 }
@@ -584,9 +629,15 @@ function snapshotHasData(snapshot){
   return JSON.stringify(snapshot.exercises)!==JSON.stringify(defaults);
 }
 function mergeCloudSnapshots(local,remote){
+  const deletedKeys=[...new Set([
+    ...(remote.settings?._deletedWorkoutKeys||[]),
+    ...(local.settings?._deletedWorkoutKeys||[])
+  ])];
+  const deletedSet=new Set(deletedKeys);
   const workouts=new Map();
   [...(remote.history||[]),...(local.history||[])].forEach(workout=>{
-    const key=JSON.stringify({date:workout.date,exercises:workout.exercises});
+    const key=workoutDeletionKey(workout);
+    if(deletedSet.has(key))return;
     if(!workouts.has(key))workouts.set(key,workout);
   });
   const remoteExercises=remote.exercises||[];
@@ -597,9 +648,9 @@ function mergeCloudSnapshots(local,remote){
     app:"Styrkeloggen",
     backupVersion:3,
     exportedAt:new Date().toISOString(),
-    settings:{...(remote.settings||{}),...(local.settings||{})},
+    settings:{...(remote.settings||{}),...(local.settings||{}),_deletedWorkoutKeys:deletedKeys},
     exercises:mergedExercises,
-    history:[...workouts.values()].sort((a,b)=>new Date(a.date)-new Date(b.date)),
+    history:dedupeHistory([...workouts.values()]).sort((a,b)=>new Date(a.date)-new Date(b.date)),
     activeSession:local.activeSession||remote.activeSession||null,
     currentIndex:local.activeSession?local.currentIndex:(remote.currentIndex||0)
   };

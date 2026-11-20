@@ -271,3 +271,16 @@ Data lagres lokalt i nettleseren på enheten. Eksporter backup fra Innstillinger
 - Trykk på en muskelgruppe i progresjonslisten eller på et område i kartet for å velge samme gruppe i nedtrekksmenyen.
 - Valg av samme gruppe igjen via kartet nullstiller til «Alle».
 - En hjelpetekst under menyen viser aktivt filter og hvor mange øvelser som inngår.
+
+
+## Versjon 3.8.4 – sletting av treningsøkter
+- Hver lagrede økt i Historikk har nå en «Slett økt»-knapp.
+- Sletting krever bekreftelse og fjerner økten fra historikk og progresjonsberegninger.
+- Øvelsenes foreslåtte startbelastning justeres til siste gjenværende registrerte økt, eller standardvekten hvis ingen økter gjenstår.
+- Slettemarkører synkroniseres med skylagringen slik at slettede økter ikke gjenoppstår ved vanlig sammenslåing mellom enheter.
+
+
+## Versjon 3.8.5 – historikkretting
+- Sletteknappen er flyttet opp i toppfeltet på hvert historikkort og har tydelig «Slett»-tekst.
+- Historikken dedupliseres på lokal kalenderdato, øvelser, sett og totalvolum ved innlasting og skysammenslåing.
+- Identiske duplikater fra samme dag fjernes; ulike økter med forskjellig innhold beholdes.

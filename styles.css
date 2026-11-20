@@ -265,3 +265,25 @@
   outline:2px solid #a3e635;
   outline-offset:2px;
 }
+
+/* v3.8.4 – delete saved workout */
+.history-card-actions{display:flex;justify-content:flex-end;margin-top:12px}
+.history-card-volume{color:var(--accent);font-weight:700;font-size:14px}
+.delete-workout-btn{
+  appearance:none;background:transparent;border:1px solid rgba(248,113,113,.48);
+  color:#fca5a5;border-radius:9px;padding:8px 12px;font:600 12px inherit;
+  min-height:36px;cursor:pointer
+}
+.delete-workout-btn:active{background:rgba(248,113,113,.12)}
+
+/* v3.8.5 – visible history delete action */
+.history-card-head{gap:10px;align-items:center}
+.history-card-tools{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.history-card-volume{color:var(--accent);font-weight:700;font-size:14px;white-space:nowrap}
+.delete-workout-btn{
+  appearance:none!important;background:rgba(248,113,113,.12)!important;
+  border:1px solid rgba(248,113,113,.65)!important;color:#ffaaa8!important;
+  border-radius:9px!important;padding:7px 11px!important;min-height:34px;
+  font:600 12px/1 inherit;cursor:pointer;white-space:nowrap
+}
+.delete-workout-btn:active{background:rgba(248,113,113,.24)!important}
